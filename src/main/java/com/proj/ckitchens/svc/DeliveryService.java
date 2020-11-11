@@ -52,7 +52,7 @@ public class DeliveryService {
                 int delay = new Random().nextInt(4) + 2;
                 executor.schedule(
                         ()-> {
-                            System.out.println("to get order from shelf: in delivery service");
+                            System.out.println(DeliveryService.class.getSimpleName() + " to remove order from shelf " + o.getId());
                             ShelfMgmtSystem.deliverOrder(o);
                         }, delay, TimeUnit.SECONDS
                 );

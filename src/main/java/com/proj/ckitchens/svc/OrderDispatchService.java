@@ -24,7 +24,7 @@ public class OrderDispatchService {
         executor.execute(() ->
                 {
                     orders.dispatchOrder(order);
-                    System.out.println("order arrived for delivery: in dispatch service");
+                    System.out.println(OrderDispatchService.class.getSimpleName() + " order dispatched to dispatch queue. order " + order.getId());
                 }
         );
 
@@ -42,7 +42,7 @@ public class OrderDispatchService {
             try {
 //                if(shutdownSignal) {orderFuture.cancel(true); return null;}
                 order = orderFuture.get();
-                System.out.println("order ready for delivery: in dispatch service");
+                System.out.println(OrderDispatchService.class.getSimpleName() + " order ready for delivery. order " + (order!=null? order.getId() : null));
             } catch (ExecutionException | InterruptedException e) {
                 return null;
             }

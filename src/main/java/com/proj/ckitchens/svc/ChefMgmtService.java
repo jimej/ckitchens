@@ -45,7 +45,7 @@ public class ChefMgmtService {
             if (o != null) {
                 executor.execute(() -> {
                     cookOrder(o);
-                    System.out.println("order cooked and placed: in chef management");
+                    System.out.println(ChefMgmtService.class.getSimpleName() + " order cooked and to be placed on shelf: " + o.getId());
                     ShelfMgmtSystem.placePackaging(o);
 
                 });

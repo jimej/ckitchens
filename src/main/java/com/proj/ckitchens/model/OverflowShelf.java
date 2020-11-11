@@ -2,6 +2,8 @@ package com.proj.ckitchens.model;
 
 import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
+import com.proj.ckitchens.svc.ShelfMgmtSystem;
+
 import static com.proj.ckitchens.common.Temperature.*;
 
 import java.util.*;
@@ -44,16 +46,19 @@ public class OverflowShelf extends Shelf {
                         hotPositions.offer(freePos);
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
+                        System.out.println(OverflowShelf.class.getSimpleName() + " hot placed on overflow: " + order.getId() + " position " + freePos);
                         break;
                     case COLD:
                         coldPositions.offer(freePos);
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
+                        System.out.println(OverflowShelf.class.getSimpleName() + " cold placed on overflow: " + order.getId()  + " position " + freePos);
                         break;
                     case FROZEN:
                         frozenPositions.offer(freePos);
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
+                        System.out.println(OverflowShelf.class.getSimpleName() + " frozen placed on overflow: " + order.getId()  + " position " + freePos);
                 }
                 return true;
             }
@@ -95,6 +100,7 @@ public class OverflowShelf extends Shelf {
                     cells[pos] = null;
                     availableCells.offer(pos);
                     locations.remove(o.getId());
+                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded hot position on overflow shelf " + o.getTemp() );
                     break;
                 case COLD:
                     pos = coldPositions.poll();
@@ -102,6 +108,8 @@ public class OverflowShelf extends Shelf {
                     cells[pos] = null;
                     availableCells.offer(pos);
                     locations.remove(o.getId());
+                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded cold position on overflow shelf " + o.getTemp() );
+
                     break;
                 case FROZEN:
                     pos = frozenPositions.poll();
@@ -109,7 +117,9 @@ public class OverflowShelf extends Shelf {
                     cells[pos] = null;
                     availableCells.offer(pos);
                     locations.remove(o.getId());
-            }
+                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded frozen position on overflow shelf " + o.getTemp() );
+
+        }
             try {
                 return o;
             } finally {
@@ -131,7 +141,7 @@ public class OverflowShelf extends Shelf {
            cells[pos] = null;
            locations.remove(o.getId());
            availableCells.offer(pos);
-           System.out.println("discarded random order");
+           System.out.println(OverflowShelf.class.getSimpleName() + " discarded random order " + o.getId() + " from position " + pos);
 
             switch (o.getTemp()) {
                 case HOT:
@@ -155,6 +165,7 @@ public class OverflowShelf extends Shelf {
             if(locations.get(id) == null) {
                 return -1;
             }
+            System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id));
             return locations.get(id);
         } finally {
             lock.unlock();
@@ -164,8 +175,10 @@ public class OverflowShelf extends Shelf {
     public boolean remove(Order order) {
         lock.lock();
         int pos = lookup(order.getId());
+
         try {
             if (pos > -1) {
+                System.out.println(OverflowShelf.class.getSimpleName() + " delivered from overflow shelf pos: " + order.getId() + " " + pos);
                 cells[pos] = null;
                 availableCells.offer(pos);
                 locations.remove(order.getId());

@@ -25,7 +25,7 @@ public class OrderDispatchQueue {
         lock.lock();
         try {
             boolean addedOrder = orders.offer(o);
-            System.out.println("order dispatch queue count when added " + orders.size());
+            System.out.println(OrderDispatchQueue.class.getSimpleName() + " order " + o.getId() + " added to dispatch queue. queue size " + orders.size());
             moreOrders.signalAll();
             return addedOrder;
         } finally {
@@ -39,9 +39,9 @@ public class OrderDispatchQueue {
             while(!cancelled && orders.peek() == null) {
                 moreOrders.await(10, TimeUnit.MILLISECONDS);
             }
-            System.out.println("order dispatch queue count before removal " + orders.size());
+            System.out.println(OrderDispatchQueue.class.getSimpleName() + " order about to be removed from dispatch queue. queue size " + orders.size());
             Order o = orders.poll();
-            System.out.println("order dispatch queue count after removal " + orders.size());
+            System.out.println(OrderDispatchQueue.class.getSimpleName() + " order removed " + o.getId() + " queue size " + orders.size());
 
             return o;
         } catch (InterruptedException e) {

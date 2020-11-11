@@ -25,9 +25,9 @@ public class OrderQueue {
             while(!shutdownSignal && orders.peek() == null) {
                 moreOrders.await();
             }
-            System.out.println("order queue count before removal " + orders.size());
+            System.out.println(OrderQueue.class.getSimpleName() + " an order is about to be removed from order queue. size: " + orders.size());
             Order o = orders.poll();
-            System.out.println("order queue count after removal " + orders.size());
+            System.out.println(OrderQueue.class.getSimpleName() + " order " + o.getId() + " removed from order queue. size: " + orders.size());
             return o;
         } catch (InterruptedException e) {
             return null;
@@ -40,7 +40,7 @@ public class OrderQueue {
         lock.lock();
         try {
             boolean addedOrder = orders.offer(o);
-            System.out.println("order queue count when added " + orders.size());
+            System.out.println(OrderQueue.class.getSimpleName() + " order " + o.getId() + " added to order queue. size: " + orders.size());
             moreOrders.signalAll();
             return addedOrder;
         } finally {

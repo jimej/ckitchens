@@ -30,9 +30,9 @@ public class OrderMgmtService {
 //        }
             executor.execute(() -> {
                 orders.addOrder(o);
-                System.out.println("order arrived in: order management");
+                System.out.println(OrderMgmtService.class.getSimpleName() + " order " + o.getId() + " temp: " + o.getTemp() + " placed on queue by order management");
                 dispatchService.dispatch(o);
-                System.out.println("order dispatched: in order management service");
+                System.out.println(OrderMgmtService.class.getSimpleName() +  " order " + o.getId() + " temp: " + o.getTemp() + " dispatched from order management");
             });
 
         }
@@ -45,7 +45,7 @@ public class OrderMgmtService {
         Order order;
         try {
             order = orderFuture.get();
-            System.out.println("order from order management: in order managment service");
+            System.out.println(OrderMgmtService.class.getSimpleName() + " get order");
         } catch (ExecutionException | InterruptedException e) {
             return null;
         }

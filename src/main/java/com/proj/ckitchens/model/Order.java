@@ -92,6 +92,10 @@ public class Order {
         this.discarded = true;
     }
 
+    public long getLifeAfterMove() {
+        return this.lifeAfterMove;
+    }
+
     public boolean isMoved() {
         return isMoved;
     }
