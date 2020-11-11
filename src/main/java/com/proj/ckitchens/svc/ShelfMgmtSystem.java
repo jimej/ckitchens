@@ -47,7 +47,7 @@ public class ShelfMgmtSystem {
 
     }
 
-    public static void discardPackagingEndOfLife(Temperature temp) {
+    public static void discardPackagingEndOfLife() {
         SHELF_O.discardPastDue();
         SHELF_H.discardPastDue();
         SHELF_C.discardPastDue();

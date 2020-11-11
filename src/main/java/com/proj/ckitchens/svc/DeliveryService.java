@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DeliveryService {
     private final ScheduledExecutorService executor;
-//    private final ExecutorService executor;
+    //    private final ExecutorService executor;
 //    private final OrderDispatchQueue dispatchedOrders;
     private final OrderDispatchService dispatchService;
     private boolean shutdownSignal;
@@ -46,12 +46,12 @@ public class DeliveryService {
 //        executor.shutdown();
 
 
-        while(!shutdownSignal) {
+        while (!shutdownSignal) {
             Order o = dispatchService.getOrderForDelivery();
-            if(o!=null) {
+            if (o != null) {
                 int delay = new Random().nextInt(4) + 2;
                 executor.schedule(
-                        ()-> {
+                        () -> {
                             System.out.println(DeliveryService.class.getSimpleName() + " to remove order from shelf " + o.getId());
                             ShelfMgmtSystem.deliverOrder(o);
                         }, delay, TimeUnit.SECONDS
@@ -64,6 +64,7 @@ public class DeliveryService {
     public void signalShutdown() {
         this.shutdownSignal = true;
     }
+
     public void shutdown() {
         this.executor.shutdown();
     }
