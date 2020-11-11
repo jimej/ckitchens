@@ -56,10 +56,15 @@ public class CkitchensApplication {
 //		orderMgmtService.addOrder(order_3);
 //		orderMgmtService.addOrder(order_4);
 //		orderMgmtService.addOrder(order_5);
+		Thread r = new Thread(() -> chefMgmtService.run());
+		r.start();
+		Thread t = new Thread(() -> deliveryService.run());
+		t.start();
+
 		ords.stream().forEach(o ->
 				{
 					try {
-						Thread.sleep(100);
+						Thread.sleep(50);
 						orderMgmtService.addOrder(o);
 					} catch (Exception e) {
 
@@ -67,10 +72,6 @@ public class CkitchensApplication {
 				}
 		);
 
-		Thread r = new Thread(() -> chefMgmtService.run());
-		r.start();
-		Thread t = new Thread(() -> deliveryService.run());
-		t.start();
 		try {
 			Thread.sleep(30000);
 		} catch(Exception e) {}

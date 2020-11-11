@@ -17,10 +17,10 @@ public class ShelfMgmtSystem {
     private static final Lock cold = new ReentrantLock();
     private static final Lock frozen = new ReentrantLock();
     private static final Lock overflow = new ReentrantLock();
-    private static final Shelf SHELF_H = new Shelf(hot, 20, Temperature.HOT);
-    private static final Shelf SHELF_C = new Shelf(cold, 20, Temperature.COLD);
-    private static final Shelf SHELF_F = new Shelf(frozen, 20, Temperature.FROZEN);
-    private static final OverflowShelf SHELF_O = new OverflowShelf(overflow, 40);
+    private static final Shelf SHELF_H = new Shelf(hot, 10, Temperature.HOT);
+    private static final Shelf SHELF_C = new Shelf(cold, 10, Temperature.COLD);
+    private static final Shelf SHELF_F = new Shelf(frozen, 10, Temperature.FROZEN);
+    private static final OverflowShelf SHELF_O = new OverflowShelf(overflow, 20);
 
     public static void placePackaging(Order order) {
         switch (order.getTemp()) {
@@ -78,11 +78,11 @@ public class ShelfMgmtSystem {
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to hot shelf to place " + order.getId() + " on overflow shelf");
                 Order o = SHELF_O.removePos(Temperature.HOT);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                SHELF_H.placePackaging(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on hot shelf and yielded overflow shelf position to order " + order.getId());
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
                 o.setLifeAfterMove();
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+                SHELF_H.placePackaging(o);
+                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on hot shelf and yielded overflow shelf position to order " + order.getId());
                 SHELF_O.placePackaging(order);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to hot position on overflow by order " + o.getId());
                 return;
@@ -100,11 +100,11 @@ public class ShelfMgmtSystem {
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to cold shelf to place " + order.getId() + " on overflow shelf");
                 Order o = SHELF_O.removePos(Temperature.COLD);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                SHELF_C.placePackaging(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on cold shelf and yielded overflow shelf position to order " + order.getId());
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
                 o.setLifeAfterMove();
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+                SHELF_C.placePackaging(o);
+                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on cold shelf and yielded overflow shelf position to order " + order.getId());
                 SHELF_O.placePackaging(order);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to cold position on overflow by order " + o.getId());
                 return;
@@ -122,11 +122,11 @@ public class ShelfMgmtSystem {
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
                 Order o = SHELF_O.removePos(Temperature.FROZEN);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                SHELF_F.placePackaging(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
                 o.setLifeAfterMove();
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+                SHELF_F.placePackaging(o);
+                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
                 SHELF_O.placePackaging(order);
                 System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
                 return;

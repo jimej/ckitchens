@@ -47,7 +47,7 @@ public class Shelf {
                         System.out.println(Shelf.class.getSimpleName() + " order " + order.getId() + " placed on cold shelf position: " + freePos + " isMoved:" + order.isMoved());
                         break;
                     case FROZEN:
-                        System.out.println(Shelf.class.getSimpleName() + " order " + order.getId() + " placed on frozen shelf " + freePos + " isMoved:" + order.isMoved());
+                        System.out.println(Shelf.class.getSimpleName() + " order " + order.getId() + " placed on frozen shelf position: " + freePos + " isMoved:" + order.isMoved());
                 }
                 if(!order.isMoved()) {
                     order.setPlacementTime();
