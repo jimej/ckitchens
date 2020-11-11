@@ -163,9 +163,11 @@ public class OverflowShelf extends Shelf {
         lock.lock();
         try {
             if(locations.get(id) == null) {
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " not found on overflow shelf");
                 return -1;
+            } else {
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id));
             }
-            System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id));
             return locations.get(id);
         } finally {
             lock.unlock();

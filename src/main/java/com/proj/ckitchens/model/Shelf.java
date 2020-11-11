@@ -37,6 +37,7 @@ public class Shelf {
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
+                locations.put(order.getId(), freePos);
                 //only for logging and testing
                 switch(order.getTemp()) {
                     case HOT:
@@ -83,9 +84,10 @@ public class Shelf {
         lock.lock();
         try {
             if(locations.get(id) == null) {
+                System.out.println(Shelf.class.getSimpleName() + " order " + id + " not found on " + temperature + " shelf");
                 return -1;
             }
-            System.out.println(Shelf.class.getSimpleName() + " order " + id + " found on shelf at position " + locations.get(id));
+            System.out.println(Shelf.class.getSimpleName() + " order " + id + " found on " + temperature + " shelf at position " + locations.get(id));
             return locations.get(id);
         } finally {
             lock.unlock();
@@ -97,10 +99,12 @@ public class Shelf {
 
         int pos = lookup(id);
         if (pos > -1) {
-            System.out.println(Shelf.class.getSimpleName() + " removed from shelf: " + id);
+            System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
             cells[pos] = null;
             availableCells.offer(pos);
             locations.remove(id);
+        } else {
+            System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);
         }
         lock.unlock();
     }

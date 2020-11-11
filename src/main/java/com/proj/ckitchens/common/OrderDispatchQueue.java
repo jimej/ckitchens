@@ -40,8 +40,11 @@ public class OrderDispatchQueue {
                 moreOrders.await(10, TimeUnit.MILLISECONDS);
             }
             System.out.println(OrderDispatchQueue.class.getSimpleName() + " order about to be removed from dispatch queue. queue size " + orders.size());
-            Order o = orders.poll();
-            System.out.println(OrderDispatchQueue.class.getSimpleName() + " order removed " + o.getId() + " queue size " + orders.size());
+            Order o = null;
+            if(!cancelled && orders.peek() != null) {
+                o = orders.poll();
+            }
+            System.out.println(OrderDispatchQueue.class.getSimpleName() + " order removed " + (o != null? o.getId() : null )+ " queue size " + orders.size());
 
             return o;
         } catch (InterruptedException e) {
