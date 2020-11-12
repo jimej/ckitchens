@@ -68,7 +68,7 @@ public class CkitchensApplication {
 		);
 
 		try {
-			Thread.sleep(425000);
+			Thread.sleep(60000);//200000
 		} catch(Exception e) {}
 
 //		orderMgmtService.shutdown();

@@ -24,22 +24,6 @@ public class ChefMgmtService {
     }
 
     public void run() {
-//        if(shutdownSignal) {
-//            executor.shutdown();
-//            return;
-//        }
-//        while(!shutdownSignal) {
-//            executor.execute(() -> {
-////            Order o = orders.getOrder();
-//                Order o = orderMgmtService.getOrder();
-//                if (o != null) {
-//                    cookOrder(o);
-//                    System.out.println("order cooked and placed: in chef management");
-//                    ShelfMgmtSystem.placePackaging(o);
-//                }
-//            });
-//        }
-//        this.executor.shutdown();
         while (!shutdownSignal) {
             Order o = orderMgmtService.getOrder();
 
@@ -51,8 +35,6 @@ public class ChefMgmtService {
 
                 });
 
-            } else {
-                System.out.println("got a null order");
             }
         }
         this.executor.shutdown();

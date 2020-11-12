@@ -38,7 +38,6 @@ public class OrderDispatchService {
             Order order;
             try {
                 order = orderFuture.get();
-                System.out.println(OrderDispatchService.class.getSimpleName() + " order ready for delivery. order " + (order!=null? order.getId() : null));
             } catch (ExecutionException | InterruptedException e) {
                 return null;
             }

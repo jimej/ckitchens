@@ -38,7 +38,6 @@ public class OrderMgmtService {
         Order order;
         try {
             order = orderFuture.get();
-            System.out.println(OrderMgmtService.class.getSimpleName() + " get order " + (order!=null?order.getId():null));//todo: order.getId()
         } catch (ExecutionException | InterruptedException e) {
             return null;
         }

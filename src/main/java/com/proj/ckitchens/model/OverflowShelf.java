@@ -1,6 +1,5 @@
 package com.proj.ckitchens.model;
 
-import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 
@@ -29,12 +28,6 @@ public class OverflowShelf extends Shelf {
             availableCells.offer(i);
         }
         locations = new HashMap<>();
-    }
-
-    public void readContents() {
-        lock.lock();
-
-        lock.unlock();
     }
 
     public boolean placePackaging(Order order) {
@@ -75,7 +68,6 @@ public class OverflowShelf extends Shelf {
             lock.unlock();
         }
 
-//        return false;
     }
 
     public boolean hasOnShelf(Temperature temp) {
@@ -226,15 +218,38 @@ public class OverflowShelf extends Shelf {
 
     public void discardPastDue() {
         lock.lock();
-        for(UUID id : locations.keySet()) {
-            Order o = cells[locations.get(id)];
-            double lifeValue =  o.computeRemainingLifeValue(2);
-            if (lifeValue <=0) {
-                remove(o, true);
+        try {
+            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
+            while(it.hasNext()) {
+                Map.Entry<UUID, Integer> entry = it.next();
+                Order o = cells[entry.getValue()];
+                double lifeValue = o.computeRemainingLifeValue(1);
+                if (lifeValue <= 0) {
+                    masterLock.lock();
+                    it.remove();
+                    cells[entry.getValue()] = null;
+                    availableCells.offer(entry.getValue());
+                    switch (o.getTemp()) {
+                        case HOT:
+                            hotPositions.remove(entry.getValue());
+                            break;
+                        case COLD:
+                            coldPositions.remove(entry.getValue());
+                            break;
+                        case FROZEN:
+                            frozenPositions.remove(entry.getValue());
+                    }
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp());
+                    masterLock.unlock();
+                }
             }
 
+        } catch (Exception e) {
+            System.out.println("exception");
+        } finally {
+            lock.unlock();
         }
-        lock.unlock();
+
     }
 
     public void readContentOnShelf() {

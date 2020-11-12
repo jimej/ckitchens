@@ -23,7 +23,7 @@ public class DeliveryService {
         while (!shutdownSignal) {
             Order o = dispatchService.getOrderForDelivery();
             if (o != null) {
-                int delay = new Random().nextInt(4) + 2; //20, 60
+                int delay = new Random().nextInt(20) + 60; //20, 60
                 executor.schedule(
                         () -> {
                             System.out.println(DeliveryService.class.getSimpleName() + " to remove order from shelf " + o.getId());
