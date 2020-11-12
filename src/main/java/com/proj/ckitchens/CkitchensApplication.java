@@ -53,10 +53,13 @@ public class CkitchensApplication {
 //		orderMgmtService.addOrder(ord_4);
 //		orderMgmtService.addOrder(ord_5);
 
+		double ordersPerSecond = 2; //
+		int gap = (int) Math.round(1000/ordersPerSecond); //poisson distribution
+
 		orders.stream().forEach(o ->
 				{
 					try {
-						Thread.sleep(50);
+						Thread.sleep(gap);
 						orderMgmtService.addOrder(o);
 					} catch (Exception e) {
 
@@ -65,7 +68,7 @@ public class CkitchensApplication {
 		);
 
 		try {
-			Thread.sleep(15000);
+			Thread.sleep(425000);
 		} catch(Exception e) {}
 
 //		orderMgmtService.shutdown();

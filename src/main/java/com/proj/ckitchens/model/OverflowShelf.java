@@ -5,7 +5,9 @@ import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 
 import static com.proj.ckitchens.common.Temperature.*;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 
@@ -36,8 +38,10 @@ public class OverflowShelf extends Shelf {
     }
 
     public boolean placePackaging(Order order) {
-        lock.lock();
+
         try {
+            lock.lock();
+            masterLock.lock();
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
@@ -47,23 +51,27 @@ public class OverflowShelf extends Shelf {
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " hot placed on overflow: " + order.getId() + " position " + freePos);
+                        ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + HOT);
                         break;
                     case COLD:
                         coldPositions.offer(freePos);
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " cold placed on overflow: " + order.getId()  + " position " + freePos);
+                        ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + COLD);
                         break;
                     case FROZEN:
                         frozenPositions.offer(freePos);
                         locations.put(order.getId(), freePos);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " frozen placed on overflow: " + order.getId()  + " position " + freePos);
+                        ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + FROZEN);
                 }
                 return true;
             }
             return false;
         } finally {
+            masterLock.unlock();
             lock.unlock();
         }
 
@@ -93,6 +101,7 @@ public class OverflowShelf extends Shelf {
         lock.lock();
         Order o = null;
         int pos = -1;
+        masterLock.lock();
         switch (temp) {
                 case HOT:
                     pos = hotPositions.poll();
@@ -120,9 +129,11 @@ public class OverflowShelf extends Shelf {
                     System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded frozen position on overflow shelf " + o.getTemp() );
 
         }
-            try {
+        ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf");
+        try {
                 return o;
             } finally {
+                masterLock.unlock();
                 lock.unlock();
             }
 
@@ -134,14 +145,13 @@ public class OverflowShelf extends Shelf {
      */
     public Order discardRandom() {
         lock.lock();
-
         try {
            int pos = new Random().nextInt(capacity);
+           masterLock.lock();
            Order o = cells[pos];
            cells[pos] = null;
            locations.remove(o.getId());
            availableCells.offer(pos);
-           System.out.println(OverflowShelf.class.getSimpleName() + " discarded random order " + o.getId() + " from position " + pos);
 
             switch (o.getTemp()) {
                 case HOT:
@@ -153,8 +163,11 @@ public class OverflowShelf extends Shelf {
                 case FROZEN:
                     frozenPositions.remove(pos);
             }
+            System.out.println(OverflowShelf.class.getSimpleName() + " discarded random order " + o.getId() + " from position " + pos);
+            ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - discarded: random order " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp());
             return o;
         } finally {
+            masterLock.unlock();
             lock.unlock();
         }
     }
@@ -179,12 +192,8 @@ public class OverflowShelf extends Shelf {
         int pos = lookup(order.getId());
 
         try {
+            masterLock.lock();
             if (pos > -1) {
-                if(pastDueTime) {
-                    System.out.println(OverflowShelf.class.getSimpleName() + " cleaned from overflow shelf pos: " + order.getId() + " " + pos);
-                } else {
-                    System.out.println(OverflowShelf.class.getSimpleName() + " delivered from overflow shelf pos: " + order.getId() + " " + pos);
-                }
                 cells[pos] = null;
                 availableCells.offer(pos);
                 locations.remove(order.getId());
@@ -199,10 +208,18 @@ public class OverflowShelf extends Shelf {
                     case FROZEN:
                         frozenPositions.remove(pos);
                 }
+                if(pastDueTime) {
+                    System.out.println(OverflowShelf.class.getSimpleName() + " cleaned from overflow shelf pos: " + order.getId() + " " + pos);
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp());
+                } else {
+                    System.out.println(OverflowShelf.class.getSimpleName() + " delivered from overflow shelf pos: " + order.getId() + " " + pos);
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp());
+                }
                 return true;
             }
             return false;
         } finally {
+            masterLock.unlock();
             lock.unlock();
         }
     }
@@ -218,6 +235,19 @@ public class OverflowShelf extends Shelf {
 
         }
         lock.unlock();
+    }
+
+    public void readContentOnShelf() {
+//        lock.lock();
+        masterLock.lock();
+        int pos = 0;
+        while (pos < capacity && cells[pos] != null) {
+            Order o = cells[pos];
+            System.out.println("Overflow shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(2) + ", pos: " + pos + ", temp:" + o.getTemp());
+            pos++;
+        }
+        masterLock.unlock();
+//        lock.unlock();
     }
 
 

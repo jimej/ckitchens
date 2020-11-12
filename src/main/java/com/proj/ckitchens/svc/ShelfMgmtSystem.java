@@ -6,6 +6,7 @@ import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.OverflowShelf;
 import com.proj.ckitchens.model.Shelf;
 
+import java.time.LocalTime;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -13,10 +14,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * manage movement of orders on shelf
  */
 public class ShelfMgmtSystem {
-    private static final Lock hot = new ReentrantLock();
-    private static final Lock cold = new ReentrantLock();
-    private static final Lock frozen = new ReentrantLock();
-    private static final Lock overflow = new ReentrantLock();
+    private static final Lock hot = new ReentrantLock(true);
+    private static final Lock cold = new ReentrantLock(true);
+    private static final Lock frozen = new ReentrantLock(true);
+    private static final Lock overflow = new ReentrantLock(true);
+    public static final Lock masterLock = new ReentrantLock(true);
     private static final Shelf SHELF_H = new Shelf(hot, 10, Temperature.HOT);
     private static final Shelf SHELF_C = new Shelf(cold, 10, Temperature.COLD);
     private static final Shelf SHELF_F = new Shelf(frozen, 10, Temperature.FROZEN);
@@ -43,8 +45,22 @@ public class ShelfMgmtSystem {
         }
     }
 
-    public static void readContents() {
-
+    public static void readContents(LocalTime timestamp, String triggerEvent) {
+//        overflow.lock();
+//        hot.lock();
+//        cold.lock();
+//        frozen.lock();
+        masterLock.lock();
+        System.out.println(timestamp + " " + triggerEvent);
+        SHELF_O.readContentOnShelf();
+        SHELF_H.readContentOnShelf();
+        SHELF_C.readContentOnShelf();
+        SHELF_F.readContentOnShelf();
+        masterLock.unlock();
+//        frozen.unlock();
+//        cold.unlock();
+//        hot.unlock();
+//        overflow.unlock();
     }
 
     public static void discardPackagingEndOfLife() {

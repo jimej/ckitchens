@@ -2,9 +2,14 @@ package com.proj.ckitchens.model;
 
 import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
+import com.proj.ckitchens.svc.ShelfMgmtSystem;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
+
+import static com.proj.ckitchens.common.Temperature.HOT;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
 public class Shelf {
     private final Lock lock;
@@ -25,15 +30,11 @@ public class Shelf {
         locations = new HashMap<>();
     }
 
-    public void readContents() {
-        lock.lock();
-
-        lock.unlock();
-    }
-
     public boolean placePackaging(Order order) {
-        lock.lock();
+
         try {
+            lock.lock();
+            masterLock.lock();
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
@@ -51,11 +52,15 @@ public class Shelf {
                 }
                 if(!order.isMoved()) {
                     order.setPlacementTime();
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on " + temperature + " shelf");
+                } else {
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + temperature + " shelf");
                 }
                 return true;
             }
             return false;
         } finally {
+            masterLock.unlock();
             lock.unlock();
         }
 
@@ -98,18 +103,22 @@ public class Shelf {
         lock.lock();
 
         int pos = lookup(id);
+        masterLock.lock();
         if (pos > -1) {
-            if(pastDueTime) {
-                System.out.println(Shelf.class.getSimpleName() + " cleaned from " + temperature + " shelf: " + id);
-            } else {
-                System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
-            }
             cells[pos] = null;
             availableCells.offer(pos);
             locations.remove(id);
+            if(pastDueTime) {
+                System.out.println(Shelf.class.getSimpleName() + " cleaned from " + temperature + " shelf: " + id);
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " cleaned from " + temperature + " shelf");
+            } else {
+                System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up from " + temperature + " shelf");
+            }
         } else {
             System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);
         }
+        masterLock.unlock();
         lock.unlock();
     }
 
@@ -124,6 +133,19 @@ public class Shelf {
 
         }
         lock.unlock();
+    }
+
+    public void readContentOnShelf() {
+//        lock.lock();
+        masterLock.lock();
+        int pos = 0;
+        while (pos < capacity && cells[pos] != null) {
+            Order o = cells[pos];
+            System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
+            pos++;
+        }
+        masterLock.unlock();
+//        lock.unlock();
     }
 
     private void validateStateMaintained() {
