@@ -94,12 +94,16 @@ public class Shelf {
         }
     }
 
-    public void remove(UUID id) {
+    public void remove(UUID id, boolean pastDueTime) {
         lock.lock();
 
         int pos = lookup(id);
         if (pos > -1) {
-            System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
+            if(pastDueTime) {
+                System.out.println(Shelf.class.getSimpleName() + " cleaned from " + temperature + " shelf: " + id);
+            } else {
+                System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
+            }
             cells[pos] = null;
             availableCells.offer(pos);
             locations.remove(id);
@@ -115,14 +119,14 @@ public class Shelf {
             Order o = cells[locations.get(id)];
             double lifeValue =  o.computeRemainingLifeValue(1);
             if (lifeValue <=0) {
-                remove(o.getId());
+                remove(o.getId(), true);
             }
 
         }
         lock.unlock();
     }
 
-    private void maintainState() {
+    private void validateStateMaintained() {
 
     }
 }

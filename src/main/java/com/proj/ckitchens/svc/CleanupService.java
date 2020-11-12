@@ -4,11 +4,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * discard from shelf when food value is 0
+ */
 public class CleanupService {
     private final ScheduledExecutorService executor;
     private boolean shutdownSignal;
     public CleanupService() {
-        this.executor = Executors.newScheduledThreadPool(4);
+        this.executor = Executors.newScheduledThreadPool(2);
         this.shutdownSignal = false;
     }
 

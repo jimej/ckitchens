@@ -6,10 +6,7 @@ import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Fake;
 import com.proj.ckitchens.model.Order;
-import com.proj.ckitchens.svc.ChefMgmtService;
-import com.proj.ckitchens.svc.DeliveryService;
-import com.proj.ckitchens.svc.OrderDispatchService;
-import com.proj.ckitchens.svc.OrderMgmtService;
+import com.proj.ckitchens.svc.*;
 import com.proj.ckitchens.utils.OrderParser;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.ClassPathResource;
@@ -36,7 +33,7 @@ public class CkitchensApplication {
 		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue, dispatchService);
 		ChefMgmtService chefMgmtService = new ChefMgmtService(3,orderQueue, orderMgmtService);
 		DeliveryService deliveryService = new DeliveryService(3,dispatchQueue, dispatchService);
-
+        CleanupService cleanupService = new CleanupService();
 
 		Order ord_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 300, 0.23);
 		Order ord_2 = new Order(UUID.randomUUID(), Temperature.COLD, "Italian", 300, 0.23);
@@ -48,6 +45,7 @@ public class CkitchensApplication {
 		r.start();
 		Thread t = new Thread(() -> deliveryService.run());
 		t.start();
+		new Thread(() -> cleanupService.run()).start();
 
 //		orderMgmtService.addOrder(ord_1);
 //		orderMgmtService.addOrder(ord_2);
@@ -78,6 +76,7 @@ public class CkitchensApplication {
 //		dispatchService.shutdown();
 //		deliveryService.signalShutdown();
 
+		cleanupService.signalShutdown();
 		chefMgmtService.signalShutdown();
 		deliveryService.signalShutdown();
 		orderMgmtService.shutdown();

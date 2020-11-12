@@ -56,16 +56,16 @@ public class ShelfMgmtSystem {
 
     public static void deliverOrder(Order order) {
 //        !SHELF_O.remove(order) &&
-        if (!SHELF_O.remove(order)) {
+        if (!SHELF_O.remove(order, false)) {
             switch (order.getTemp()) {
                 case HOT:
-                    SHELF_H.remove(order.getId()); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
+                    SHELF_H.remove(order.getId(), false); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
                     break;
                 case COLD:
-                    SHELF_C.remove(order.getId());
+                    SHELF_C.remove(order.getId(), false);
                     break;
                 case FROZEN:
-                    SHELF_F.remove(order.getId());
+                    SHELF_F.remove(order.getId(), false);
             }
         }
     }

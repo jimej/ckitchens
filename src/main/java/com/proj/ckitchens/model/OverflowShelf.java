@@ -174,13 +174,17 @@ public class OverflowShelf extends Shelf {
         }
     }
 
-    public boolean remove(Order order) {
+    public boolean remove(Order order, boolean pastDueTime) {
         lock.lock();
         int pos = lookup(order.getId());
 
         try {
             if (pos > -1) {
-                System.out.println(OverflowShelf.class.getSimpleName() + " delivered from overflow shelf pos: " + order.getId() + " " + pos);
+                if(pastDueTime) {
+                    System.out.println(OverflowShelf.class.getSimpleName() + " cleaned from overflow shelf pos: " + order.getId() + " " + pos);
+                } else {
+                    System.out.println(OverflowShelf.class.getSimpleName() + " delivered from overflow shelf pos: " + order.getId() + " " + pos);
+                }
                 cells[pos] = null;
                 availableCells.offer(pos);
                 locations.remove(order.getId());
@@ -209,7 +213,7 @@ public class OverflowShelf extends Shelf {
             Order o = cells[locations.get(id)];
             double lifeValue =  o.computeRemainingLifeValue(2);
             if (lifeValue <=0) {
-                remove(o);
+                remove(o, true);
             }
 
         }
