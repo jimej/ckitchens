@@ -1,6 +1,5 @@
 package com.proj.ckitchens.model;
 
-import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 
@@ -8,7 +7,6 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 
-import static com.proj.ckitchens.common.Temperature.HOT;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
 public class Shelf {
@@ -23,7 +21,6 @@ public class Shelf {
         this.capacity = capacity;
         this.cells = new Order[capacity];
         this.temperature = temperature;
-//        emptyCells = Arrays.asList(0);
         for(int i = 0; i < capacity; i++) {
             availableCells.offer(i);
         }
@@ -64,7 +61,6 @@ public class Shelf {
             lock.unlock();
         }
 
-//        return false;
     }
 
     public boolean isCellAvailable() {
@@ -124,23 +120,36 @@ public class Shelf {
 
     public void discardPastDue() {
         lock.lock();
-        for(UUID id : locations.keySet()) {
-            Order o = cells[locations.get(id)];
-            double lifeValue =  o.computeRemainingLifeValue(1);
-            if (lifeValue <=0) {
-                remove(o.getId(), true);
+        try {
+            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
+            while(it.hasNext()) {
+               Map.Entry<UUID, Integer> entry = it.next();
+               Order o = cells[entry.getValue()];
+                double lifeValue = o.computeRemainingLifeValue(1);
+                if (lifeValue <= 0) {
+                    masterLock.lock();
+                    it.remove();
+                    cells[entry.getValue()] = null;
+                    availableCells.offer(entry.getValue());
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf");
+                    masterLock.unlock();
+                }
             }
-
+        } catch (Exception e ) {
+            System.out.println("exception");
+        }finally {
+            lock.unlock();
         }
-        lock.unlock();
+
     }
 
     public void readContentOnShelf() {
 //        lock.lock();
         masterLock.lock();
         int pos = 0;
-        while (pos < capacity && cells[pos] != null) {
+        while (pos < capacity && cells[pos]/*cells.get(pos) */!= null) {
             Order o = cells[pos];
+//            Order o = cells.get(pos);
             System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
             pos++;
         }
