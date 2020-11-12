@@ -36,12 +36,14 @@ public class OrderDispatchQueue {
     public Order getOrderForDelivery(boolean shutdownSignal) {
         lock.lock();
         try {
-            while(!cancelled && orders.peek() == null) {
-                moreOrders.await(10, TimeUnit.MILLISECONDS);
+            while(!shutdownSignal && orders.peek() == null) {
+//                 if(cancelled)   return null;
+//                    moreOrders.await(10, TimeUnit.MILLISECONDS);
+                moreOrders.await();
             }
             System.out.println(OrderDispatchQueue.class.getSimpleName() + " order about to be removed from dispatch queue. queue size " + orders.size());
             Order o = null;
-            if(!cancelled && orders.peek() != null) {
+            if(!shutdownSignal && orders.peek() != null) {
                 o = orders.poll();
             }
             System.out.println(OrderDispatchQueue.class.getSimpleName() + " order removed " + (o != null? o.getId() : null )+ " queue size " + orders.size());

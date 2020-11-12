@@ -47,7 +47,7 @@ public class DeliveryService {
 
 
         while (!shutdownSignal) {
-            Order o = dispatchService.getOrderForDelivery();
+            Order o = dispatchService.getOrderForDelivery(shutdownSignal);
             if (o != null) {
                 int delay = new Random().nextInt(4) + 2;
                 executor.schedule(

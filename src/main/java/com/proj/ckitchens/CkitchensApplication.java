@@ -51,15 +51,17 @@ public class CkitchensApplication {
 		Order order_3 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
 		Order order_4 = new Order(UUID.randomUUID(), Temperature.COLD, "Ice Cream", 300, 0.23);
 		Order order_5 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
+
+		Thread r = new Thread(() -> chefMgmtService.run());
+		r.start();
+		Thread t = new Thread(() -> deliveryService.run());
+		t.start();
+
 //		orderMgmtService.addOrder(order_1);
 //		orderMgmtService.addOrder(order_2);
 //		orderMgmtService.addOrder(order_3);
 //		orderMgmtService.addOrder(order_4);
 //		orderMgmtService.addOrder(order_5);
-		Thread r = new Thread(() -> chefMgmtService.run());
-		r.start();
-		Thread t = new Thread(() -> deliveryService.run());
-		t.start();
 
 		ords.stream().forEach(o ->
 				{
@@ -73,7 +75,7 @@ public class CkitchensApplication {
 		);
 
 		try {
-			Thread.sleep(30000);
+			Thread.sleep(15000);
 		} catch(Exception e) {}
 
 //		orderMgmtService.shutdown();
@@ -84,11 +86,14 @@ public class CkitchensApplication {
 //		dispatchService.shutdown();
 //		deliveryService.signalShutdown();
 
+		dispatchQueue.setCancelled();
+		orderQueue.setCancelled();
 		chefMgmtService.signalShutdown();
 		deliveryService.signalShutdown();
+		orderMgmtService.signalShutdown();
 		orderMgmtService.shutdown();
 		dispatchService.shutdown();
-		dispatchQueue.setCancelled();
+
 
 //		deliveryService.shutdown();
 //		System.exit(0);

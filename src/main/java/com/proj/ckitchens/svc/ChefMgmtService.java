@@ -41,7 +41,8 @@ public class ChefMgmtService {
 //        }
 //        this.executor.shutdown();
         while (!shutdownSignal) {
-            Order o = orderMgmtService.getOrder();
+            Order o = orderMgmtService.getOrder(shutdownSignal);
+
             if (o != null) {
                 executor.execute(() -> {
                     cookOrder(o);
@@ -50,6 +51,8 @@ public class ChefMgmtService {
 
                 });
 
+            } else {
+                System.out.println("got a null order");
             }
         }
         this.executor.shutdown();

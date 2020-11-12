@@ -37,8 +37,12 @@ public class OrderMgmtService {
 
         }
 
-    public Order getOrder() {
+    public Order getOrder(boolean shutdownSignal) {
       //if orders.peek != null
+//        if(shutdownSignal) {
+//            executor.shutdown();
+//            return null;
+//        }
         Future<Order> orderFuture = executor.submit(
                 () -> orders.getOrder(shutdownSignal)
         );
@@ -57,6 +61,6 @@ public class OrderMgmtService {
     }
 
     public void shutdown() {
-        this.executor.shutdown();
+        this.executor.shutdownNow();
     }
 }

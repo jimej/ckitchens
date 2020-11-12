@@ -3,6 +3,8 @@ package com.proj.ckitchens.svc;
 import com.proj.ckitchens.common.OrderDispatchQueue;
 import com.proj.ckitchens.model.Order;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,11 +16,13 @@ import java.util.concurrent.Future;
 public class OrderDispatchService {
     private final OrderDispatchQueue orders;
     private final ExecutorService executor;
-    private boolean shutdownSignal;
+    private final Set<Order> discardedOrders;
+//    private boolean shutdownSignal;
     public OrderDispatchService(OrderDispatchQueue orders) {
         this.orders = orders;
         executor = Executors.newFixedThreadPool(2);
-        shutdownSignal = false;
+        discardedOrders = new HashSet<>();
+//        shutdownSignal = false;
     }
     public void dispatch(Order order) {
         executor.execute(() ->
@@ -30,11 +34,12 @@ public class OrderDispatchService {
 
     }
 
-    public Order getOrderForDelivery() {
-//          if(shutdownSignal) {
+    public Order getOrderForDelivery(boolean shutdownSignal) {
+          if(shutdownSignal) {
 //              orders.setCancelled();
-//              return null;
-//          }
+              executor.shutdown();
+              return null;
+          }
 ////        if(!shutdownSignal) {
             Future<Order> orderFuture = executor.submit(() -> orders.getOrderForDelivery(shutdownSignal));
 
@@ -53,8 +58,8 @@ public class OrderDispatchService {
     }
 
     public void shutdown() {
-        this.shutdownSignal = true;
-        this.executor.shutdown();
+//        this.shutdownSignal = true;
+        this.executor.shutdownNow();
 
     }
 }

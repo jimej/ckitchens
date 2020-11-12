@@ -13,21 +13,25 @@ public class OrderQueue {
     private final Queue<Order> orders;
     private final Lock lock;
     private final Condition moreOrders;
+    private boolean cancelled;
     public OrderQueue() {
         this.lock = new ReentrantLock();
         orders = new LinkedList<>();
         moreOrders = lock.newCondition();
+        cancelled = false;
     }
 
     public Order getOrder(boolean shutdownSignal) {
         lock.lock();
         try {
             while(!shutdownSignal && orders.peek() == null) {
-                moreOrders.await();
+                /*if(!cancelled)*/ moreOrders.await();
+//                if(cancelled) return null;
+//                moreOrders.await(10, TimeUnit.MILLISECONDS);
             }
             System.out.println(OrderQueue.class.getSimpleName() + " an order is about to be removed from order queue. size: " + orders.size());
             Order o = orders.poll();
-            System.out.println(OrderQueue.class.getSimpleName() + " order " + o.getId() + " removed from order queue. size: " + orders.size());
+            System.out.println(OrderQueue.class.getSimpleName() + " order " + (o!=null? o.getId(): null) + " removed from order queue. size: " + orders.size());
             return o;
         } catch (InterruptedException e) {
             return null;
@@ -46,5 +50,11 @@ public class OrderQueue {
         } finally {
             lock.unlock();
         }
+    }
+
+    public void setCancelled() {
+        lock.lock();
+        this.cancelled = true;
+        lock.unlock();
     }
 }
