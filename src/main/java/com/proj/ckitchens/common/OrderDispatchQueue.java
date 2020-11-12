@@ -4,7 +4,6 @@ import com.proj.ckitchens.model.Order;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,12 +12,10 @@ public class OrderDispatchQueue {
     private final Queue<Order> orders;
     private final Lock lock;
     private final Condition moreOrders;
-    private boolean cancelled;
     public OrderDispatchQueue() {
         this.lock = new ReentrantLock();
         orders = new LinkedList<>();
         moreOrders = lock.newCondition();
-        cancelled = false;
     }
 
     public boolean dispatchOrder(Order o) {
@@ -33,19 +30,14 @@ public class OrderDispatchQueue {
         }
     }
 
-    public Order getOrderForDelivery(boolean shutdownSignal) {
+    public Order getOrderForDelivery() {
         lock.lock();
         try {
-            while(!shutdownSignal && orders.peek() == null) {
-//                 if(cancelled)   return null;
-//                    moreOrders.await(10, TimeUnit.MILLISECONDS);
+            while(orders.peek() == null) {
                 moreOrders.await();
             }
             System.out.println(OrderDispatchQueue.class.getSimpleName() + " order about to be removed from dispatch queue. queue size " + orders.size());
-            Order o = null;
-            if(!shutdownSignal && orders.peek() != null) {
-                o = orders.poll();
-            }
+            Order o = orders.poll();
             System.out.println(OrderDispatchQueue.class.getSimpleName() + " order removed " + (o != null? o.getId() : null )+ " queue size " + orders.size());
 
             return o;
@@ -56,11 +48,4 @@ public class OrderDispatchQueue {
         }
 
     }
-
-    public void setCancelled() {
-        lock.lock();
-        this.cancelled = true;
-        lock.unlock();
-    }
-
 }

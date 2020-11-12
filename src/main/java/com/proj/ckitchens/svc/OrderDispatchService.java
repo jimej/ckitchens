@@ -17,12 +17,10 @@ public class OrderDispatchService {
     private final OrderDispatchQueue orders;
     private final ExecutorService executor;
     private final Set<Order> discardedOrders;
-//    private boolean shutdownSignal;
     public OrderDispatchService(OrderDispatchQueue orders) {
         this.orders = orders;
         executor = Executors.newFixedThreadPool(2);
         discardedOrders = new HashSet<>();
-//        shutdownSignal = false;
     }
     public void dispatch(Order order) {
         executor.execute(() ->
@@ -34,32 +32,20 @@ public class OrderDispatchService {
 
     }
 
-    public Order getOrderForDelivery(boolean shutdownSignal) {
-          if(shutdownSignal) {
-//              orders.setCancelled();
-              executor.shutdown();
-              return null;
-          }
-////        if(!shutdownSignal) {
-            Future<Order> orderFuture = executor.submit(() -> orders.getOrderForDelivery(shutdownSignal));
+    public Order getOrderForDelivery() {
+            Future<Order> orderFuture = executor.submit(() -> orders.getOrderForDelivery());
 
             Order order;
             try {
-//                if(shutdownSignal) {orderFuture.cancel(true); return null;}
                 order = orderFuture.get();
                 System.out.println(OrderDispatchService.class.getSimpleName() + " order ready for delivery. order " + (order!=null? order.getId() : null));
             } catch (ExecutionException | InterruptedException e) {
                 return null;
             }
             return order;
-//        }
-//        return null;
-//        return orders.getOrderForDelivery();
     }
 
     public void shutdown() {
-//        this.shutdownSignal = true;
         this.executor.shutdownNow();
-
     }
 }

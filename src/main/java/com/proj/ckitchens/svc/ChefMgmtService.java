@@ -41,7 +41,7 @@ public class ChefMgmtService {
 //        }
 //        this.executor.shutdown();
         while (!shutdownSignal) {
-            Order o = orderMgmtService.getOrder(shutdownSignal);
+            Order o = orderMgmtService.getOrder();
 
             if (o != null) {
                 executor.execute(() -> {

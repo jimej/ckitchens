@@ -13,21 +13,17 @@ public class OrderQueue {
     private final Queue<Order> orders;
     private final Lock lock;
     private final Condition moreOrders;
-    private boolean cancelled;
     public OrderQueue() {
         this.lock = new ReentrantLock();
         orders = new LinkedList<>();
         moreOrders = lock.newCondition();
-        cancelled = false;
     }
 
-    public Order getOrder(boolean shutdownSignal) {
+    public Order getOrder() {
         lock.lock();
         try {
-            while(!shutdownSignal && orders.peek() == null) {
-                /*if(!cancelled)*/ moreOrders.await();
-//                if(cancelled) return null;
-//                moreOrders.await(10, TimeUnit.MILLISECONDS);
+            while(orders.peek() == null) {
+                moreOrders.await();
             }
             System.out.println(OrderQueue.class.getSimpleName() + " an order is about to be removed from order queue. size: " + orders.size());
             Order o = orders.poll();
@@ -50,11 +46,5 @@ public class OrderQueue {
         } finally {
             lock.unlock();
         }
-    }
-
-    public void setCancelled() {
-        lock.lock();
-        this.cancelled = true;
-        lock.unlock();
     }
 }

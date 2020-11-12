@@ -10,6 +10,7 @@ import com.proj.ckitchens.svc.ChefMgmtService;
 import com.proj.ckitchens.svc.DeliveryService;
 import com.proj.ckitchens.svc.OrderDispatchService;
 import com.proj.ckitchens.svc.OrderMgmtService;
+import com.proj.ckitchens.utils.OrderParser;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.ClassPathResource;
 
@@ -27,16 +28,7 @@ public class CkitchensApplication {
 //		SpringApplication.run(CkitchensApplication.class, args);
 		System.out.println("lo");
 
-		ObjectMapper mapper = new ObjectMapper();
-		List<Order> ords = null;
-		try {
-//			new File(getClass().getClassLoader().getResource("orders").getFile())
-			//Paths.get("orders.json").toFile()
-//			List<Fake> ords = Arrays.asList(mapper.readValue(new ClassPathResource("orders.json").getFile(), Fake[].class));
-			ords = Arrays.asList(mapper.readValue(new ClassPathResource("orders.json").getFile(), Order[].class));
-		} catch (Exception e) {
-			System.out.println("something is wrong");
-		}
+		List<Order> orders = OrderParser.readFromFile("orders.json");
 
 		OrderQueue orderQueue = new OrderQueue();
 		OrderDispatchQueue dispatchQueue = new OrderDispatchQueue();
@@ -46,24 +38,24 @@ public class CkitchensApplication {
 		DeliveryService deliveryService = new DeliveryService(3,dispatchQueue, dispatchService);
 
 
-		Order order_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 300, 0.23);
-		Order order_2 = new Order(UUID.randomUUID(), Temperature.COLD, "Italian", 300, 0.23);
-		Order order_3 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
-		Order order_4 = new Order(UUID.randomUUID(), Temperature.COLD, "Ice Cream", 300, 0.23);
-		Order order_5 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
+		Order ord_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 300, 0.23);
+		Order ord_2 = new Order(UUID.randomUUID(), Temperature.COLD, "Italian", 300, 0.23);
+		Order ord_3 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
+		Order ord_4 = new Order(UUID.randomUUID(), Temperature.COLD, "Ice Cream", 300, 0.23);
+		Order ord_5 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 300, 0.23);
 
 		Thread r = new Thread(() -> chefMgmtService.run());
 		r.start();
 		Thread t = new Thread(() -> deliveryService.run());
 		t.start();
 
-//		orderMgmtService.addOrder(order_1);
-//		orderMgmtService.addOrder(order_2);
-//		orderMgmtService.addOrder(order_3);
-//		orderMgmtService.addOrder(order_4);
-//		orderMgmtService.addOrder(order_5);
+//		orderMgmtService.addOrder(ord_1);
+//		orderMgmtService.addOrder(ord_2);
+//		orderMgmtService.addOrder(ord_3);
+//		orderMgmtService.addOrder(ord_4);
+//		orderMgmtService.addOrder(ord_5);
 
-		ords.stream().forEach(o ->
+		orders.stream().forEach(o ->
 				{
 					try {
 						Thread.sleep(50);
@@ -86,11 +78,8 @@ public class CkitchensApplication {
 //		dispatchService.shutdown();
 //		deliveryService.signalShutdown();
 
-		dispatchQueue.setCancelled();
-		orderQueue.setCancelled();
 		chefMgmtService.signalShutdown();
 		deliveryService.signalShutdown();
-		orderMgmtService.signalShutdown();
 		orderMgmtService.shutdown();
 		dispatchService.shutdown();
 

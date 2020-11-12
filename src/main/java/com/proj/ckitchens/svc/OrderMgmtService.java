@@ -15,19 +15,13 @@ public class OrderMgmtService {
     private final ExecutorService executor;
     private final OrderQueue orders;
     private final OrderDispatchService dispatchService;
-    private boolean shutdownSignal;
     public OrderMgmtService(OrderQueue oq, OrderDispatchService dispatchService) {
         this.executor = Executors.newFixedThreadPool(2);
         this.orders = oq;
         this.dispatchService = dispatchService;
-        this.shutdownSignal = false;
     }
 
     public void addOrder(Order o) {
-//        if(shutdownSignal) {
-//            executor.shutdown();
-//            return;
-//        }
             executor.execute(() -> {
                 orders.addOrder(o);
                 System.out.println(OrderMgmtService.class.getSimpleName() + " order " + o.getId() + " temp: " + o.getTemp() + " placed on queue by order management");
@@ -37,14 +31,9 @@ public class OrderMgmtService {
 
         }
 
-    public Order getOrder(boolean shutdownSignal) {
-      //if orders.peek != null
-//        if(shutdownSignal) {
-//            executor.shutdown();
-//            return null;
-//        }
+    public Order getOrder() {
         Future<Order> orderFuture = executor.submit(
-                () -> orders.getOrder(shutdownSignal)
+                () -> orders.getOrder()
         );
         Order order;
         try {
@@ -54,10 +43,6 @@ public class OrderMgmtService {
             return null;
         }
         return order;
-    }
-
-    public void signalShutdown() {
-        this.shutdownSignal = true;
     }
 
     public void shutdown() {
