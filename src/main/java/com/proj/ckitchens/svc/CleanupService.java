@@ -5,7 +5,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * discard from shelf when food value is 0
+ * clean up orders from shelves when food value reaches 0 or becomes negative
  */
 public class CleanupService {
     private final ScheduledExecutorService executor;

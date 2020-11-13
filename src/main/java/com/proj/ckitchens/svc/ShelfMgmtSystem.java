@@ -10,7 +10,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * manage movement of orders on shelf
+ * manage movement of orders on shelves
+ * This class is the entry point for placing orders on shelves, delivering/discarding orders,
+ * moving orders between shelves, cleaning up orders
  */
 public class ShelfMgmtSystem {
     private static final Lock hot = new ReentrantLock(true);
@@ -23,6 +25,10 @@ public class ShelfMgmtSystem {
     private static final Shelf SHELF_F = new Shelf(frozen, 10, Temperature.FROZEN);
     private static final OverflowShelf SHELF_O = new OverflowShelf(overflow, 20);
 
+    /**
+     * entry point for placing order on shelves
+     * @param order
+     */
     public static void placePackaging(Order order) {
         switch (order.getTemp()) {
             case HOT:
@@ -42,9 +48,16 @@ public class ShelfMgmtSystem {
         }
     }
 
-    public static void readContents(LocalTime timestamp, String className,   String triggerEvent) {
+    /**
+     * readContents on all shelves
+     * masterLock is used to lock all shelves before reading.
+     * @param timestamp
+     * @param className
+     * @param triggerEvent
+     */
+    public static void readContents(LocalTime timestamp, String triggerEvent, String className) {
         masterLock.lock();
-        System.out.println(timestamp  + triggerEvent + " [" + className +"] ");
+        System.out.println(timestamp  + " " + triggerEvent + " [" + className +"] ");
         System.out.println("=============================");
         SHELF_O.readContentOnShelf();
         SHELF_H.readContentOnShelf();
@@ -53,6 +66,10 @@ public class ShelfMgmtSystem {
         masterLock.unlock();
     }
 
+    /**
+     * clean up orders that reached end of life
+     * called periodically by {@link CleanupService} to discard orders
+     */
     public static void discardPackagingEndOfLife() {
         SHELF_O.discardPastDue();
         SHELF_H.discardPastDue();
@@ -60,21 +77,33 @@ public class ShelfMgmtSystem {
         SHELF_F.discardPastDue();
     }
 
+    /**
+     * entry point for delivering an order
+     * called by {@link DeliveryService} to deliver an order
+     * first check if the order is on overflow, then check on a regular shelf
+     * @param order
+     */
     public static void deliverOrder(Order order) {
-        if (!SHELF_O.remove(order, false)) {
+        if (!SHELF_O.removeForDelivery(order, false)) {
             switch (order.getTemp()) {
                 case HOT:
-                    SHELF_H.remove(order.getId(), false); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
+                    SHELF_H.removeForDelivery(order.getId(), false); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
                     break;
                 case COLD:
-                    SHELF_C.remove(order.getId(), false);
+                    SHELF_C.removeForDelivery(order.getId(), false);
                     break;
                 case FROZEN:
-                    SHELF_F.remove(order.getId(), false);
+                    SHELF_F.removeForDelivery(order.getId(), false);
             }
         }
     }
 
+    /**
+     * move an order from overflow to a regular shelf
+     * called by {@link ShelfMgmtSystem#placePackagingOnOverflow(Order)} when overflow is full
+     *
+     * @param order
+     */
     private static void movePackagingFromOverflow(Order order) {
         try {
             overflow.lock();
@@ -154,6 +183,10 @@ public class ShelfMgmtSystem {
         overflow.unlock();
     }
 
+    /**
+     * place an order on overflow when a HOT/COLD/FROZEN shelf is full
+     * @param order
+     */
     private static void placePackagingOnOverflow(Order order) {
         overflow.lock();
         if (!SHELF_O.placePackaging(order)) {

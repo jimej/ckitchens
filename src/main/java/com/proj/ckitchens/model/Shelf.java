@@ -27,6 +27,11 @@ public class Shelf {
         locations = new HashMap<>();
     }
 
+    /**
+     * Order placement on a regular shelf
+     * @param order
+     * @return
+     */
     public boolean placePackaging(Order order) {
 
         try {
@@ -36,21 +41,11 @@ public class Shelf {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
                 locations.put(order.getId(), freePos);
-                switch(order.getTemp()) {
-                    case HOT:
-                        System.out.println(Shelf.class.getSimpleName() +  " order " + order.getId() + " placed on hot shelf position: " + freePos + " isMoved:" + order.isMoved());
-                        break;
-                    case COLD:
-                        System.out.println(Shelf.class.getSimpleName() + " order " + order.getId() + " placed on cold shelf position: " + freePos + " isMoved:" + order.isMoved());
-                        break;
-                    case FROZEN:
-                        System.out.println(Shelf.class.getSimpleName() + " order " + order.getId() + " placed on frozen shelf position: " + freePos + " isMoved:" + order.isMoved());
-                }
                 if(!order.isMoved()) {
                     order.setPlacementTime();
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
                 } else {
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
                 }
                 return true;
             }
@@ -85,7 +80,7 @@ public class Shelf {
         }
     }
 
-    public void remove(UUID id, boolean pastDueTime) {
+    public void removeForDelivery(UUID id, boolean pastDueTime) {
         lock.lock();
 
         int pos = lookup(id);
@@ -95,11 +90,9 @@ public class Shelf {
             availableCells.offer(pos);
             locations.remove(id);
             if(pastDueTime) {
-                System.out.println(Shelf.class.getSimpleName() + " cleaned from " + temperature + " shelf: " + id);
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
             } else {
-                System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up from " + temperature + " shelf", Shelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
             }
         } else {
             System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);

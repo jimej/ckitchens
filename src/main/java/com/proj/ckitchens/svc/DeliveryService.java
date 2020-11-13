@@ -8,13 +8,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * deliver orders through this service
+ * launch threads equal to the number of courier
+ */
 public class DeliveryService {
     private final ScheduledExecutorService executor;
     private final OrderDispatchService dispatchService;
     private boolean shutdownSignal;
 
-    public DeliveryService(int delivererCount, OrderDispatchQueue dispatchedOrders, OrderDispatchService dispatchService) {
-        executor = Executors.newScheduledThreadPool(delivererCount);
+    public DeliveryService(int courierCount, OrderDispatchService dispatchService) {
+        executor = Executors.newScheduledThreadPool(courierCount);
         this.dispatchService = dispatchService;
         this.shutdownSignal = false;
     }

@@ -4,7 +4,6 @@ import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DoublyLinkedNode;
 
-import static com.proj.ckitchens.common.Temperature.*;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
 import java.time.LocalTime;
@@ -31,8 +30,12 @@ public class OverflowShelf extends Shelf {
         locations = new HashMap<>();
     }
 
+    /**
+     * Order placement on Overflow shelf
+     * @param order
+     * @return
+     */
     public boolean placePackaging(Order order) {
-
         try {
             lock.lock();
             masterLock.lock();
@@ -58,9 +61,14 @@ public class OverflowShelf extends Shelf {
             masterLock.unlock();
             lock.unlock();
         }
-
     }
 
+    /**
+     * check if the overflow shelf has an order of certain temperature.
+     * This order may be vacated from overflow to make space for new order placement.
+     * @param temp
+     * @return
+     */
     public boolean hasOnShelf(Temperature temp) {
         lock.lock();
         try {
@@ -73,7 +81,8 @@ public class OverflowShelf extends Shelf {
     }
 
     /**
-     * the position exists before the call
+     * remove an order of certain temperature on overflow to make space for new order placement
+     * It's called only after verifying the order exists and the move to HOT/COLD/FROZEN shelf is allowed
      * @param temp
      * @return
      */
@@ -105,7 +114,9 @@ public class OverflowShelf extends Shelf {
     }
 
     /**
-     * only called when overflow shelf is full
+     * discard a random order from overflow shelf when overflow is full and moving an order from overflow
+     * to regular shelf is not possible.
+     *
      * @return
      */
     public Order discardRandom() {
@@ -124,6 +135,11 @@ public class OverflowShelf extends Shelf {
         }
     }
 
+    /**
+     * look up the location on the shelf given order id
+     * @param id
+     * @return
+     */
     public int lookup(UUID id) {
         lock.lock();
         try {
@@ -131,7 +147,7 @@ public class OverflowShelf extends Shelf {
                 System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " not found on overflow shelf");
                 return -1;
             } else {
-                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id));
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id).value());
             }
             return locations.get(id).value();
         } finally {
@@ -139,7 +155,13 @@ public class OverflowShelf extends Shelf {
         }
     }
 
-    public boolean remove(Order order, boolean pastDueTime) {
+    /**
+     * remove an order from shelf for delivery
+     * @param order
+     * @param pastDueTime
+     * @return
+     */
+    public boolean removeForDelivery(Order order, boolean pastDueTime) {
         lock.lock();
         int pos = lookup(order.getId());
 
@@ -161,6 +183,9 @@ public class OverflowShelf extends Shelf {
         }
     }
 
+    /**
+     * discard all past due orders on the overflow shelf
+     */
     public void discardPastDue() {
         lock.lock();
         try {
@@ -199,6 +224,9 @@ public class OverflowShelf extends Shelf {
 
     }
 
+    /**
+     * read content on shelf
+     */
     public void readContentOnShelf() {
         masterLock.lock();
         int pos = 0;

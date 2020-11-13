@@ -31,8 +31,8 @@ public class CkitchensApplication {
 		OrderDispatchQueue dispatchQueue = new OrderDispatchQueue();
 		OrderDispatchService dispatchService = new OrderDispatchService(dispatchQueue);
 		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue, dispatchService);
-		ChefMgmtService chefMgmtService = new ChefMgmtService(3,orderQueue, orderMgmtService);
-		DeliveryService deliveryService = new DeliveryService(3,dispatchQueue, dispatchService);
+		ChefMgmtService chefMgmtService = new ChefMgmtService(3, orderMgmtService);
+		DeliveryService deliveryService = new DeliveryService(3, dispatchService);
         CleanupService cleanupService = new CleanupService();
 
 		Order ord_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 300, 0.23);

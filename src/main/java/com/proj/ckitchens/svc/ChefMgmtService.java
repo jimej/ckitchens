@@ -7,13 +7,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * cook order and place cooked order on shelf
+ * get orders from {@link OrderQueue}, cook orders and place cooked orders on shelf
+ * launch threads equal to the number of chefs to perform the actions
  */
 public class ChefMgmtService {
     private final OrderMgmtService orderMgmtService;
     private final ExecutorService executor;
     private boolean shutdownSignal;
-    public ChefMgmtService(int numOfChefs, OrderQueue oq, OrderMgmtService orderMgmtService) {
+    public ChefMgmtService(int numOfChefs, OrderMgmtService orderMgmtService) {
         this.orderMgmtService = orderMgmtService;
         executor = Executors.newFixedThreadPool(numOfChefs);
         this.shutdownSignal = false;
