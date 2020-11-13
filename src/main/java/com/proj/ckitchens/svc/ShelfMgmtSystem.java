@@ -154,9 +154,13 @@ public class ShelfMgmtSystem {
         }
 
         overflow.lock();
-        SHELF_O.discardRandom(); //overflow shelf must be full.
-        SHELF_O.placePackaging(order);
-        System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after discarding an order on overflow");
+        Order discarded = SHELF_O.discardRandom(); //overflow shelf must be full.
+        if(discarded != null) {
+            SHELF_O.placePackaging(order);
+            System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after discarding an order on overflow");
+        } else { //only happens if overflow has 0 capacity
+            System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is thrown away. REMOVAL - thrown away");
+        }
 
 
         overflow.unlock();

@@ -196,8 +196,9 @@ public class OverflowShelf extends Shelf {
     public Order discardRandom() {
         lock.lock();
         try {
-            int pos = new Random().nextInt(capacity);
             masterLock.lock();
+            if (capacity == 0) return null;
+            int pos = new Random().nextInt(capacity);
             Order o = cells[pos];
             cells[pos] = null;
             DoublyLinkedNode node = locations.remove(o.getId());
