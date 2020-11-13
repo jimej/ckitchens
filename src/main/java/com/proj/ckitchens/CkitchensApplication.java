@@ -21,10 +21,10 @@ public class CkitchensApplication {
 		List<Order> orders = OrderParser.readFromFile("orders.json");
 
 		LockedQueue<Order> orderQueue = new LockedQueue<>();
-		LockedQueue<Order> dispatchQueue = new LockedQueue<>();
-		OrderDispatchService dispatchService = new OrderDispatchService(dispatchQueue);
-		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue, dispatchService);
-		ChefMgmtService chefMgmtService = new ChefMgmtService(3, orderMgmtService);
+		LockedQueue<Order> deliveryQueue = new LockedQueue<>();
+		OrderDispatchService dispatchService = new OrderDispatchService(orderQueue, deliveryQueue);
+		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue);
+		ChefMgmtService chefMgmtService = new ChefMgmtService(3, dispatchService);
 		DeliveryService deliveryService = new DeliveryService(3, dispatchService);
         CleanupService cleanupService = new CleanupService();
 

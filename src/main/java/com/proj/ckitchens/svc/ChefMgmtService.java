@@ -11,18 +11,19 @@ import java.util.concurrent.Executors;
  * launch threads equal to the number of chefs to perform the actions
  */
 public class ChefMgmtService {
-    private final OrderMgmtService orderMgmtService;
+//    private final OrderMgmtService orderMgmtService;
+    private final OrderDispatchService orderDispatchService ;
     private final ExecutorService executor;
     private boolean shutdownSignal;
-    public ChefMgmtService(int numOfChefs, OrderMgmtService orderMgmtService) {
-        this.orderMgmtService = orderMgmtService;
+    public ChefMgmtService(int numOfChefs, OrderDispatchService dispatchService) {
+        this.orderDispatchService = dispatchService;
         executor = Executors.newFixedThreadPool(numOfChefs);
         this.shutdownSignal = false;
     }
 
     public void run() {
         while (!shutdownSignal) {
-            Order o = orderMgmtService.getOrder();
+            Order o = orderDispatchService.getIncomingOrder();
 
             if (o != null) {
                 executor.execute(() -> {
