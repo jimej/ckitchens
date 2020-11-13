@@ -53,7 +53,7 @@ public class CkitchensApplication {
 //		orderMgmtService.addOrder(ord_4);
 //		orderMgmtService.addOrder(ord_5);
 
-		double ordersPerSecond = 2; //
+		double ordersPerSecond = 20; //
 		int gap = (int) Math.round(1000/ordersPerSecond); //poisson distribution
 
 		orders.stream().forEach(o ->

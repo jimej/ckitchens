@@ -2,6 +2,7 @@ package com.proj.ckitchens.model;
 
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
+import com.proj.ckitchens.utils.DoublyLinkedNode;
 
 import static com.proj.ckitchens.common.Temperature.*;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
@@ -15,10 +16,16 @@ public class OverflowShelf extends Shelf {
     private final int capacity;
     private final Order[] cells;
     private final Queue<Integer> availableCells = new LinkedList<>();
-    private final Queue<Integer> hotPositions = new LinkedList<>();
-    private final Queue<Integer> coldPositions = new LinkedList<>();
-    private final Queue<Integer> frozenPositions = new LinkedList<>();
-    private final Map<UUID, Integer> locations;
+    //    private final Queue<Integer> hotPositions = new LinkedList<>();
+//    private final Queue<Integer> coldPositions = new LinkedList<>();
+//    private final Queue<Integer> frozenPositions = new LinkedList<>();
+//    private final LinkedList<DoublyLinkedNode> hotPositions = new LinkedList<>();
+//    private final LinkedList<DoublyLinkedNode> coldPositions = new LinkedList<>();
+//    private final LinkedList<DoublyLinkedNode> frozenPositions = new LinkedList<>();
+    private static DoublyLinkedNode hotHead, coldHead, frozenHead =  null;
+    private static DoublyLinkedNode hotTail, coldTail, frozenTail =  null;
+
+    private final Map<UUID, DoublyLinkedNode> locations;
     public OverflowShelf(Lock lock, int capacity) {
         super(lock, capacity, null);
         this.lock = lock;
@@ -38,24 +45,47 @@ public class OverflowShelf extends Shelf {
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
+                DoublyLinkedNode curr = new DoublyLinkedNode(freePos);
                 switch(order.getTemp()) {
                     case HOT:
-                        hotPositions.offer(freePos);
-                        locations.put(order.getId(), freePos);
+                        if(hotTail == null) {
+                            hotTail = curr;
+                            hotHead = curr;
+                        } else {
+                            hotTail.setNext(curr);
+                            curr.setPrevious(hotTail);
+                            hotTail = curr;
+                        }
+//                        hotPositions.offer(freePos);
+                        locations.put(order.getId(), curr);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " hot placed on overflow: " + order.getId() + " position " + freePos);
                         ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + HOT);
                         break;
                     case COLD:
-                        coldPositions.offer(freePos);
-                        locations.put(order.getId(), freePos);
+                        if(coldTail == null) {
+                            coldTail = curr;
+                            coldHead = curr;
+                        } else {
+                            coldTail.setNext(curr);
+                            curr.setPrevious(coldTail);
+                            coldTail = curr;
+                        }
+                        locations.put(order.getId(), curr);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " cold placed on overflow: " + order.getId()  + " position " + freePos);
                         ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + COLD);
                         break;
                     case FROZEN:
-                        frozenPositions.offer(freePos);
-                        locations.put(order.getId(), freePos);
+                        if(frozenTail == null) {
+                            frozenTail = curr;
+                            frozenHead = curr;
+                        } else {
+                            frozenTail.setNext(curr);
+                            curr.setPrevious(frozenTail);
+                            frozenTail = curr;
+                        }
+                        locations.put(order.getId(), curr);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " frozen placed on overflow: " + order.getId()  + " position " + freePos);
                         ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf; temp: " + FROZEN);
@@ -73,9 +103,9 @@ public class OverflowShelf extends Shelf {
     public boolean hasOnShelf(Temperature temp) {
         lock.lock();
         try {
-            return (temp == Temperature.HOT && !hotPositions.isEmpty())
-                || (temp == Temperature.COLD && !coldPositions.isEmpty())
-                || (temp == Temperature.FROZEN && !frozenPositions.isEmpty());
+            return (temp == Temperature.HOT && hotTail != null)
+                    || (temp == Temperature.COLD && coldTail != null)
+                    || (temp == Temperature.FROZEN && frozenTail != null);
 //            switch (temp) {
 //                case HOT:
 //                    if(!hotPositions.isEmpty())
@@ -89,45 +119,73 @@ public class OverflowShelf extends Shelf {
         }
     }
 
+    /**
+     * the position exists before the call
+     * @param temp
+     * @return
+     */
     public Order removePos(Temperature temp) {
         lock.lock();
         Order o = null;
         int pos = -1;
         masterLock.lock();
         switch (temp) {
-                case HOT:
-                    pos = hotPositions.poll();
-                    o = cells[pos];
-                    cells[pos] = null;
-                    availableCells.offer(pos);
-                    locations.remove(o.getId());
-                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded hot position on overflow shelf " + o.getTemp() );
-                    break;
-                case COLD:
-                    pos = coldPositions.poll();
-                    o = cells[pos];
-                    cells[pos] = null;
-                    availableCells.offer(pos);
-                    locations.remove(o.getId());
-                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded cold position on overflow shelf " + o.getTemp() );
+            case HOT:
+//                    head = hotHead;
+//                    head.getNext().setPrevious(null);
+                pos = hotHead.value();
+                if(hotHead.getNext() != null) {
+                    hotHead.getNext().setPrevious(null);
+                    hotHead = hotHead.getNext();
+                } else {
+                    hotHead = null;
+                    hotTail = null;
+                }
+                o = cells[pos];
+                cells[pos] = null;
+                availableCells.offer(pos);
+                locations.remove(o.getId());
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded hot position on overflow shelf " + o.getTemp() );
+                break;
+            case COLD:
+                pos = coldHead.value();
+                if(coldHead.getNext() != null) {
+                    coldHead.getNext().setPrevious(null);
+                    coldHead = coldHead.getNext();
+                } else {
+                    coldHead = null;
+                    coldTail = null;
+                }
+                o = cells[pos];
+                cells[pos] = null;
+                availableCells.offer(pos);
+                locations.remove(o.getId());
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded cold position on overflow shelf " + o.getTemp() );
 
-                    break;
-                case FROZEN:
-                    pos = frozenPositions.poll();
-                    o = cells[pos];
-                    cells[pos] = null;
-                    availableCells.offer(pos);
-                    locations.remove(o.getId());
-                    System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded frozen position on overflow shelf " + o.getTemp() );
+                break;
+            case FROZEN:
+                pos = frozenHead.value();
+                if(frozenHead.getNext() != null) {
+                    frozenHead.getNext().setPrevious(null);
+                    frozenHead = frozenHead.getNext();
+                } else {
+                    frozenHead = null;
+                    frozenTail = null;
+                }
+                o = cells[pos];
+                cells[pos] = null;
+                availableCells.offer(pos);
+                locations.remove(o.getId());
+                System.out.println(OverflowShelf.class.getSimpleName() + " order " + o.getId() + " yielded frozen position on overflow shelf " + o.getTemp() );
 
         }
         ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf");
         try {
-                return o;
-            } finally {
-                masterLock.unlock();
-                lock.unlock();
-            }
+            return o;
+        } finally {
+            masterLock.unlock();
+            lock.unlock();
+        }
 
     }
 
@@ -138,22 +196,29 @@ public class OverflowShelf extends Shelf {
     public Order discardRandom() {
         lock.lock();
         try {
-           int pos = new Random().nextInt(capacity);
-           masterLock.lock();
-           Order o = cells[pos];
-           cells[pos] = null;
-           locations.remove(o.getId());
-           availableCells.offer(pos);
-
+            int pos = new Random().nextInt(capacity);
+            masterLock.lock();
+            Order o = cells[pos];
+            cells[pos] = null;
+            DoublyLinkedNode node = locations.remove(o.getId());
+            availableCells.offer(pos);
+            DoublyLinkedNode[] temp = null;
             switch (o.getTemp()) {
                 case HOT:
-                    hotPositions.remove(Integer.valueOf(pos));
+                    temp = nodeMaintenance(node, hotHead, hotTail);
+                    hotHead = temp[0];
+                    hotTail = temp[1];
+//                    hotPositions.remove(pos);
                     break;
                 case COLD:
-                    coldPositions.remove(Integer.valueOf(pos));
+                    temp = nodeMaintenance(node, coldHead, coldTail);
+                    coldHead = temp[0];
+                    coldTail = temp[1];
                     break;
                 case FROZEN:
-                    frozenPositions.remove(Integer.valueOf(pos));
+                    temp = nodeMaintenance(node, frozenHead, frozenTail);
+                    frozenHead = temp[0];
+                    frozenTail = temp[1];
             }
             System.out.println(OverflowShelf.class.getSimpleName() + " discarded random order " + o.getId() + " from position " + pos);
             ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - discarded: random order " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp());
@@ -173,7 +238,7 @@ public class OverflowShelf extends Shelf {
             } else {
                 System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id));
             }
-            return locations.get(id);
+            return locations.get(id).value();
         } finally {
             lock.unlock();
         }
@@ -188,17 +253,24 @@ public class OverflowShelf extends Shelf {
             if (pos > -1) {
                 cells[pos] = null;
                 availableCells.offer(pos);
-                locations.remove(order.getId());
-
+                DoublyLinkedNode node = locations.remove(order.getId());
+                DoublyLinkedNode[] temp = null;
                 switch (order.getTemp()) {
                     case HOT:
-                        hotPositions.remove(Integer.valueOf(pos));
+                        temp = nodeMaintenance(node, hotHead, hotTail);
+                        hotHead = temp[0];
+                        hotTail = temp[1];
+//                    hotPositions.remove(pos);
                         break;
                     case COLD:
-                        coldPositions.remove(Integer.valueOf(pos));
+                        temp = nodeMaintenance(node, coldHead, coldTail);
+                        coldHead = temp[0];
+                        coldTail = temp[1];
                         break;
                     case FROZEN:
-                        frozenPositions.remove(Integer.valueOf(pos));
+                        temp = nodeMaintenance(node, frozenHead, frozenTail);
+                        frozenHead = temp[0];
+                        frozenTail = temp[1];
                 }
                 if(pastDueTime) {
                     System.out.println(OverflowShelf.class.getSimpleName() + " cleaned from overflow shelf pos: " + order.getId() + " " + pos);
@@ -219,25 +291,35 @@ public class OverflowShelf extends Shelf {
     public void discardPastDue() {
         lock.lock();
         try {
-            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
+            Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
             while(it.hasNext()) {
-                Map.Entry<UUID, Integer> entry = it.next();
-                Order o = cells[entry.getValue()];
-                double lifeValue = o.computeRemainingLifeValue(1);
+                Map.Entry<UUID, DoublyLinkedNode> entry = it.next();
+                DoublyLinkedNode node = entry.getValue();
+                Order o = cells[node.value()];
+
+                double lifeValue = o.computeRemainingLifeValue(2);
                 if (lifeValue <= 0) {
                     masterLock.lock();
                     it.remove();
-                    cells[entry.getValue()] = null;
-                    availableCells.offer(entry.getValue());
+                    cells[node.value()] = null;
+                    availableCells.offer(node.value());
+                    DoublyLinkedNode[] temp = null;
                     switch (o.getTemp()) {
                         case HOT:
-                            hotPositions.remove(Integer.valueOf(entry.getValue()));
+                            temp = nodeMaintenance(node, hotHead, hotTail);
+                            hotHead = temp[0];
+                            hotTail = temp[1];
+//                    hotPositions.remove(pos);
                             break;
                         case COLD:
-                            coldPositions.remove(Integer.valueOf(entry.getValue()));
+                            temp = nodeMaintenance(node, coldHead, coldTail);
+                            coldHead = temp[0];
+                            coldTail = temp[1];
                             break;
                         case FROZEN:
-                            frozenPositions.remove(Integer.valueOf(entry.getValue()));
+                            temp = nodeMaintenance(node, frozenHead, frozenTail);
+                            frozenHead = temp[0];
+                            frozenTail = temp[1];
                     }
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp());
                     masterLock.unlock();
@@ -266,7 +348,7 @@ public class OverflowShelf extends Shelf {
     }
 
 
-//    public boolean hasAvailableCells() {
+    //    public boolean hasAvailableCells() {
 //        lock.lock();
 //        try {
 //            return !availableCells.isEmpty();
@@ -274,5 +356,31 @@ public class OverflowShelf extends Shelf {
 //            lock.unlock();
 //        }
 //    }
+    private DoublyLinkedNode[] nodeMaintenance(DoublyLinkedNode node, DoublyLinkedNode h, DoublyLinkedNode t) {
+        lock.lock();
+        if(node.getPrevious() == null && node.getNext() == null) {
+//                        hotHead = hotTail = null;
+            h = null;
+            t = null;
+        } else if (node.getNext() == null) {
+            node.getPrevious().setNext(null);
+            t = node.getPrevious();
+        } else if (node.getPrevious() == null) {
+            node.getNext().setPrevious(null);
+            h = node.getNext();
+        } else {
+            node.getNext().setPrevious(node.getPrevious());
+            node.getPrevious().setNext(node.getNext());
+        }
+        try {
+            return new DoublyLinkedNode[]{h, t};
+        } catch (Exception e ) {
+            System.out.println("exception");
+            return null;
+        }
+        finally {
+            lock.unlock();
+        }
+    }
 
 }
