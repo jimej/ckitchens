@@ -1,4 +1,4 @@
-package com.proj.ckitchens.utils;
+package com.proj.ckitchens.common;
 
 public class DoublyLinkedNode {
     private DoublyLinkedNode previous;

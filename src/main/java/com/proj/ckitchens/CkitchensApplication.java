@@ -1,7 +1,7 @@
 package com.proj.ckitchens;
 
 //import com.proj.ckitchens.common.OrderDispatchQueue;
-import com.proj.ckitchens.common.OrderQueue;
+import com.proj.ckitchens.common.LockedQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.svc.*;
@@ -20,8 +20,8 @@ public class CkitchensApplication {
 
 		List<Order> orders = OrderParser.readFromFile("orders.json");
 
-		OrderQueue orderQueue = new OrderQueue();
-		OrderQueue dispatchQueue = new OrderQueue();
+		LockedQueue<Order> orderQueue = new LockedQueue<>();
+		LockedQueue<Order> dispatchQueue = new LockedQueue<>();
 		OrderDispatchService dispatchService = new OrderDispatchService(dispatchQueue);
 		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue, dispatchService);
 		ChefMgmtService chefMgmtService = new ChefMgmtService(3, orderMgmtService);

@@ -1,13 +1,13 @@
 package com.proj.ckitchens.svc;
 
 import com.proj.ckitchens.model.Order;
-import com.proj.ckitchens.common.OrderQueue;
+import com.proj.ckitchens.common.LockedQueue;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * get orders from {@link OrderQueue}, cook orders and place cooked orders on shelf
+ * get orders from {@link LockedQueue}, cook orders and place cooked orders on shelf
  * launch threads equal to the number of chefs to perform the actions
  */
 public class ChefMgmtService {

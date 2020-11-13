@@ -1,7 +1,7 @@
 package com.proj.ckitchens.svc;
 
 //import com.proj.ckitchens.common.OrderDispatchQueue;
-import com.proj.ckitchens.common.OrderQueue;
+import com.proj.ckitchens.common.LockedQueue;
 import com.proj.ckitchens.model.Order;
 
 import java.util.concurrent.ExecutionException;
@@ -13,16 +13,16 @@ import java.util.concurrent.Future;
  * publish order to delivery system; get order for delivery
  */
 public class OrderDispatchService {
-    private final OrderQueue orders;
+    private final LockedQueue<Order> orders;
     private final ExecutorService executor;
-    public OrderDispatchService(OrderQueue orders) {
+    public OrderDispatchService(LockedQueue<Order> orders) {
         this.orders = orders;
         executor = Executors.newFixedThreadPool(2);
     }
     public void dispatch(Order order) {
         executor.execute(() ->
                 {
-                    orders.addOrder(order);
+                    orders.add(order);
                     System.out.println(OrderDispatchService.class.getSimpleName() + " order dispatched to dispatch queue. order " + order.getId());
                 }
         );
@@ -30,7 +30,7 @@ public class OrderDispatchService {
     }
 
     public Order getOrderForDelivery() {
-            Future<Order> orderFuture = executor.submit(() -> orders.getOrder());
+            Future<Order> orderFuture = executor.submit(() -> orders.get());
 
             Order order;
             try {

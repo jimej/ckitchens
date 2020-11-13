@@ -2,7 +2,7 @@ package com.proj.ckitchens.model;
 
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
-import com.proj.ckitchens.utils.DoublyLinkedNode;
+import com.proj.ckitchens.common.DoublyLinkedNode;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
