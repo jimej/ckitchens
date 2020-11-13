@@ -163,11 +163,12 @@ public class OverflowShelf extends Shelf {
      */
     public boolean removeForDelivery(Order order, boolean pastDueTime) {
         lock.lock();
-        int pos = lookup(order.getId());
+        DoublyLinkedNode node = locations.get(order.getId());
+        Integer pos = node != null? node.value() : null;
 
         try {
             masterLock.lock();
-            if (pos > -1) {
+            if (pos != null) {
                 removeOrderHelper(order.getTemp(), pos, order.getId());
                 if(pastDueTime) {
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());

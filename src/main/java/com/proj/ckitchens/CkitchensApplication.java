@@ -1,19 +1,12 @@
 package com.proj.ckitchens;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proj.ckitchens.common.OrderDispatchQueue;
 import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
-import com.proj.ckitchens.model.Fake;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.svc.*;
 import com.proj.ckitchens.utils.OrderParser;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.core.io.ClassPathResource;
-
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
