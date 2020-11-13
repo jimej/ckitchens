@@ -136,26 +136,6 @@ public class OverflowShelf extends Shelf {
     }
 
     /**
-     * look up the location on the shelf given order id
-     * @param id
-     * @return
-     */
-    public int lookup(UUID id) {
-        lock.lock();
-        try {
-            if(locations.get(id) == null) {
-                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " not found on overflow shelf");
-                return -1;
-            } else {
-                System.out.println(OverflowShelf.class.getSimpleName() + " order " + id + " found on overflow shelf at position " + locations.get(id).value());
-            }
-            return locations.get(id).value();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * remove an order from shelf for delivery
      * @param order
      * @param pastDueTime
@@ -218,7 +198,7 @@ public class OverflowShelf extends Shelf {
             }
 
         } catch (Exception e) {
-            System.out.println("exception");
+            e.printStackTrace();
         } finally {
             lock.unlock();
         }

@@ -7,22 +7,22 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LockedQueue<T> {
-    private final Queue<T> orders;
+    private final Queue<T> q;
     private final Lock lock;
     private final Condition more;
     public LockedQueue() {
         this.lock = new ReentrantLock();
-        orders = new LinkedList<>();
+        q = new LinkedList<>();
         more = lock.newCondition();
     }
 
     public T get() {
         lock.lock();
         try {
-            while(orders.peek() == null) {
+            while(q.peek() == null) {
                 more.await();
             }
-            T o = orders.poll();
+            T o = q.poll();
             return o;
         } catch (InterruptedException e) {
             return null;
@@ -34,7 +34,7 @@ public class LockedQueue<T> {
     public boolean add(T o) {
         lock.lock();
         try {
-            boolean addedOrder = orders.offer(o);
+            boolean addedOrder = q.offer(o);
             more.signalAll();
             return addedOrder;
         } finally {

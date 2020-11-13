@@ -66,20 +66,6 @@ public class Shelf {
         }
     }
 
-//    public int lookup(UUID id) {
-//        lock.lock();
-//        try {
-//            if(locations.get(id) == null) {
-//                System.out.println(Shelf.class.getSimpleName() + " order " + id + " not found on " + temperature + " shelf");
-//                return -1;
-//            }
-//            System.out.println(Shelf.class.getSimpleName() + " order " + id + " found on " + temperature + " shelf at position " + locations.get(id));
-//            return locations.get(id);
-//        } finally {
-//            lock.unlock();
-//        }
-//    }
-
     public void removeForDelivery(UUID id, boolean pastDueTime) {
         lock.lock();
 
@@ -119,7 +105,7 @@ public class Shelf {
                 }
             }
         } catch (Exception e ) {
-            System.out.println("exception");
+            e.printStackTrace();
         }finally {
             lock.unlock();
         }

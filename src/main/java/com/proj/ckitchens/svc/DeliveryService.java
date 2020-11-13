@@ -1,9 +1,8 @@
 package com.proj.ckitchens.svc;
 
-//import com.proj.ckitchens.common.OrderDispatchQueue;
 import com.proj.ckitchens.model.Order;
+import com.proj.ckitchens.utils.RandomInt;
 
-import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +26,7 @@ public class DeliveryService {
         while (!shutdownSignal) {
             Order o = dispatchService.getOrderForDelivery();
             if (o != null) {
-                int delay = new Random().nextInt(10) + 10; //20, 60 // 4, 2
+                int delay = RandomInt.randomDelay(2, 6); //new Random().nextInt(10) + 10; //20, 60 // 4, 2
                 executor.schedule(
                         () -> {
                             System.out.println(DeliveryService.class.getSimpleName() + " to remove order from shelf " + o.getId());
