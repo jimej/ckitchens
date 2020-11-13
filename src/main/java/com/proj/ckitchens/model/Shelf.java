@@ -48,9 +48,9 @@ public class Shelf {
                 }
                 if(!order.isMoved()) {
                     order.setPlacementTime();
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on " + temperature + " shelf");
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on " + temperature + " shelf", Shelf.class.getSimpleName());
                 } else {
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + temperature + " shelf");
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + temperature + " shelf", Shelf.class.getSimpleName());
                 }
                 return true;
             }
@@ -96,10 +96,10 @@ public class Shelf {
             locations.remove(id);
             if(pastDueTime) {
                 System.out.println(Shelf.class.getSimpleName() + " cleaned from " + temperature + " shelf: " + id);
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " cleaned from " + temperature + " shelf");
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
             } else {
                 System.out.println(Shelf.class.getSimpleName() + " delivered from " + temperature + " shelf: " + id);
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up from " + temperature + " shelf");
+                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up from " + temperature + " shelf", Shelf.class.getSimpleName());
             }
         } else {
             System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);
@@ -121,7 +121,7 @@ public class Shelf {
                     it.remove();
                     cells[entry.getValue()] = null;
                     availableCells.offer(entry.getValue());
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf");
+                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
                     masterLock.unlock();
                 }
             }
