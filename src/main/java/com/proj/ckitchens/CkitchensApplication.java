@@ -1,6 +1,6 @@
 package com.proj.ckitchens;
 
-import com.proj.ckitchens.common.OrderDispatchQueue;
+//import com.proj.ckitchens.common.OrderDispatchQueue;
 import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
@@ -21,7 +21,7 @@ public class CkitchensApplication {
 		List<Order> orders = OrderParser.readFromFile("orders.json");
 
 		OrderQueue orderQueue = new OrderQueue();
-		OrderDispatchQueue dispatchQueue = new OrderDispatchQueue();
+		OrderQueue dispatchQueue = new OrderQueue();
 		OrderDispatchService dispatchService = new OrderDispatchService(dispatchQueue);
 		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue, dispatchService);
 		ChefMgmtService chefMgmtService = new ChefMgmtService(3, orderMgmtService);
