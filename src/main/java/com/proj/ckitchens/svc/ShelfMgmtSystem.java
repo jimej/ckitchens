@@ -52,6 +52,7 @@ public class ShelfMgmtSystem {
 //        frozen.lock();
         masterLock.lock();
         System.out.println(timestamp + " " + triggerEvent);
+        System.out.println("=============================");
         SHELF_O.readContentOnShelf();
         SHELF_H.readContentOnShelf();
         SHELF_C.readContentOnShelf();
