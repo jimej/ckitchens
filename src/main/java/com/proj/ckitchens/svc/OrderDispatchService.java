@@ -23,41 +23,22 @@ public class OrderDispatchService {
     }
 
     public Order getIncomingOrder() {
-//        Future<Order> orderFuture = executor.submit(
-//                () -> orders.get()
-//        );
-//        Order order;
-//        try {
-//            order = orderFuture.get();
-//            if(order!=null) dispatch(order);
-//        } catch (ExecutionException | InterruptedException e) {
-//            return null;
-//        }
         Order order = getOrderFromQueue(orders);
-        if(order != null) dispatch(order);
+        if(order != null) moveOrderToDeliveryQueue(order);
         return order;
     }
 
-    public void dispatch(Order order) {
+    public void moveOrderToDeliveryQueue(Order order) {
         executor.execute(() ->
                 {
                     deliveryQueue.add(order);
-                    System.out.println(OrderDispatchService.class.getSimpleName() + " order dispatched to dispatch queue. order " + order.getId());
+                    System.out.println(OrderDispatchService.class.getSimpleName() + " order " + order.getId() + " dispatched to delivery queue.");
                 }
         );
 
     }
 
     public Order getOrderForDelivery() {
-//            Future<Order> orderFuture = executor.submit(() -> deliveryQueue.get());
-//
-//            Order order;
-//            try {
-//                order = orderFuture.get();
-//            } catch (ExecutionException | InterruptedException e) {
-//                return null;
-//            }
-//            return order;
         return getOrderFromQueue(deliveryQueue);
     }
 

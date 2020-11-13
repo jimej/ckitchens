@@ -22,9 +22,7 @@ public class LockedQueue<T> {
             while(orders.peek() == null) {
                 more.await();
             }
-//            System.out.println(OrderQueue.class.getSimpleName() + " an order is about to be removed from order queue. size: " + orders.size());
             T o = orders.poll();
-//            System.out.println(OrderQueue.class.getSimpleName() + " order " + (o!=null? o.getId(): null) + " removed from order queue. size: " + orders.size());
             return o;
         } catch (InterruptedException e) {
             return null;
@@ -37,7 +35,6 @@ public class LockedQueue<T> {
         lock.lock();
         try {
             boolean addedOrder = orders.offer(o);
-//            System.out.println(OrderQueue.class.getSimpleName() + " order " + o.getId() + " added to order queue. size: " + orders.size());
             more.signalAll();
             return addedOrder;
         } finally {
