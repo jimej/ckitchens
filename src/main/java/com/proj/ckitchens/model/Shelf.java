@@ -66,7 +66,7 @@ public class Shelf {
         }
     }
 
-    public void removeForDelivery(UUID id, boolean pastDueTime) {
+    public void removeForDelivery(UUID id) {
         lock.lock();
 
         Integer pos = locations.get(id);
@@ -75,11 +75,11 @@ public class Shelf {
             cells[pos] = null;
             availableCells.offer(pos);
             locations.remove(id);
-            if(pastDueTime) {
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
-            } else {
+//            if(pastDueTime) {
+//                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
+//            } else {
                 ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
-            }
+//            }
         } else {
             System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);
         }

@@ -141,7 +141,7 @@ public class OverflowShelf extends Shelf {
      * @param pastDueTime
      * @return
      */
-    public boolean removeForDelivery(Order order, boolean pastDueTime) {
+    public boolean removeForDelivery(Order order) {
         lock.lock();
         DoublyLinkedNode node = locations.get(order.getId());
         Integer pos = node != null? node.value() : null;
@@ -150,11 +150,11 @@ public class OverflowShelf extends Shelf {
             masterLock.lock();
             if (pos != null) {
                 removeOrderHelper(order.getTemp(), pos, order.getId());
-                if(pastDueTime) {
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
-                } else {
+//                if(pastDueTime) {
+//                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+//                } else {
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
-                }
+//                }
                 return true;
             }
             return false;
