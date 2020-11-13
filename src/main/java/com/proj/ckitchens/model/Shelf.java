@@ -32,7 +32,7 @@ public class Shelf {
      * @param order
      * @return
      */
-    public boolean placePackaging(Order order) {
+    public boolean placeOnShelf(Order order) {
 
         try {
             lock.lock();
@@ -87,7 +87,7 @@ public class Shelf {
         lock.unlock();
     }
 
-    public void discardPastDue() {
+    public void cleanup() {
         lock.lock();
         try {
             Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
@@ -115,7 +115,7 @@ public class Shelf {
     public void readContentOnShelf() {
         masterLock.lock();
         int pos = 0;
-        while (pos < capacity && cells[pos]/*cells.get(pos) */!= null) {
+        while (pos < capacity && cells[pos]!= null) {
             Order o = cells[pos];
             System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
             pos++;

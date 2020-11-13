@@ -35,7 +35,7 @@ public class OverflowShelf extends Shelf {
      * @param order
      * @return
      */
-    public boolean placePackaging(Order order) {
+    public boolean placeOnShelf(Order order) {
         try {
             lock.lock();
             masterLock.lock();
@@ -165,9 +165,9 @@ public class OverflowShelf extends Shelf {
     }
 
     /**
-     * discard all past due orders on the overflow shelf
+     * clean up all past due orders on the overflow shelf
      */
-    public void discardPastDue() {
+    public void cleanup() {
         lock.lock();
         try {
             Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();

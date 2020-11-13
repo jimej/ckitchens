@@ -16,7 +16,7 @@ public class CleanupService {
     }
 
     public void run() {
-        executor.scheduleWithFixedDelay(()->ShelfMgmtSystem.discardPackagingEndOfLife(), 30, 10, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(()->ShelfMgmtSystem.cleanupOrdersEndOfLife(), 30, 10, TimeUnit.SECONDS);
         while(!shutdownSignal) {
             try {
                 Thread.sleep(5000);
