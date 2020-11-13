@@ -12,7 +12,7 @@ public class DoublyLinkedNode {
         this.previous = node;
     }
 
-    public DoublyLinkedNode getPrevious() {
+    public DoublyLinkedNode previous() {
         return previous;
     }
 
@@ -20,7 +20,7 @@ public class DoublyLinkedNode {
         this.next = node;
     }
 
-    public DoublyLinkedNode getNext() {
+    public DoublyLinkedNode next() {
         return next;
     }
 

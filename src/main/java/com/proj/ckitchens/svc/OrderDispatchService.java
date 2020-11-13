@@ -16,11 +16,9 @@ import java.util.concurrent.Future;
 public class OrderDispatchService {
     private final OrderDispatchQueue orders;
     private final ExecutorService executor;
-    private final Set<Order> discardedOrders;
     public OrderDispatchService(OrderDispatchQueue orders) {
         this.orders = orders;
         executor = Executors.newFixedThreadPool(2);
-        discardedOrders = new HashSet<>();
     }
     public void dispatch(Order order) {
         executor.execute(() ->

@@ -1,6 +1,5 @@
 package com.proj.ckitchens.svc;
 
-import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.OverflowShelf;
@@ -143,7 +142,7 @@ public class ShelfMgmtSystem {
         }
 
         overflow.lock();
-        Order discarded = SHELF_O.discardRandom(); //overflow shelf must be full.
+        Order discarded = SHELF_O.discardRandom(); //overflow shelf must be full at this point.
         if(discarded != null) {
             SHELF_O.placePackaging(order);
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after discarding an order on overflow");

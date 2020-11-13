@@ -117,9 +117,9 @@ public class OverflowShelf extends Shelf {
         switch (temp) {
             case HOT:
                 pos = hotHead.value();
-                if(hotHead.getNext() != null) {
-                    hotHead.getNext().setPrevious(null);
-                    hotHead = hotHead.getNext();
+                if(hotHead.next() != null) {
+                    hotHead.next().setPrevious(null);
+                    hotHead = hotHead.next();
                 } else {
                     hotHead = null;
                     hotTail = null;
@@ -132,9 +132,9 @@ public class OverflowShelf extends Shelf {
                 break;
             case COLD:
                 pos = coldHead.value();
-                if(coldHead.getNext() != null) {
-                    coldHead.getNext().setPrevious(null);
-                    coldHead = coldHead.getNext();
+                if(coldHead.next() != null) {
+                    coldHead.next().setPrevious(null);
+                    coldHead = coldHead.next();
                 } else {
                     coldHead = null;
                     coldTail = null;
@@ -148,9 +148,9 @@ public class OverflowShelf extends Shelf {
                 break;
             case FROZEN:
                 pos = frozenHead.value();
-                if(frozenHead.getNext() != null) {
-                    frozenHead.getNext().setPrevious(null);
-                    frozenHead = frozenHead.getNext();
+                if(frozenHead.next() != null) {
+                    frozenHead.next().setPrevious(null);
+                    frozenHead = frozenHead.next();
                 } else {
                     frozenHead = null;
                     frozenTail = null;
@@ -328,18 +328,18 @@ public class OverflowShelf extends Shelf {
 
     private DoublyLinkedNode[] nodeMaintenance(DoublyLinkedNode node, DoublyLinkedNode h, DoublyLinkedNode t) {
         lock.lock();
-        if(node.getPrevious() == null && node.getNext() == null) {
+        if(node.previous() == null && node.next() == null) {
             h = null;
             t = null;
-        } else if (node.getNext() == null) {
-            node.getPrevious().setNext(null);
-            t = node.getPrevious();
-        } else if (node.getPrevious() == null) {
-            node.getNext().setPrevious(null);
-            h = node.getNext();
+        } else if (node.next() == null) {
+            node.previous().setNext(null);
+            t = node.previous();
+        } else if (node.previous() == null) {
+            node.next().setPrevious(null);
+            h = node.next();
         } else {
-            node.getNext().setPrevious(node.getPrevious());
-            node.getPrevious().setNext(node.getNext());
+            node.next().setPrevious(node.previous());
+            node.previous().setNext(node.next());
         }
         try {
             return new DoublyLinkedNode[]{h, t};

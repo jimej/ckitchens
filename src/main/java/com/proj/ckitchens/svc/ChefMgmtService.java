@@ -10,12 +10,10 @@ import java.util.concurrent.Executors;
  * cook order and place cooked order on shelf
  */
 public class ChefMgmtService {
-    private final int numOfChefs;
     private final OrderMgmtService orderMgmtService;
     private final ExecutorService executor;
     private boolean shutdownSignal;
     public ChefMgmtService(int numOfChefs, OrderQueue oq, OrderMgmtService orderMgmtService) {
-        this.numOfChefs = numOfChefs;
         this.orderMgmtService = orderMgmtService;
         executor = Executors.newFixedThreadPool(numOfChefs);
         this.shutdownSignal = false;

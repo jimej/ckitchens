@@ -46,10 +46,6 @@ public class Order {
         return shelfLife;
     }
 
-    public double getDecayRate() {
-        return decayRate;
-    }
-
     public Temperature getTemp() {
         return temp;
     }
@@ -66,9 +62,9 @@ public class Order {
     }
 
     public double computeRemainingLifeValue(int modifier) {
-        long orderAge = (System.currentTimeMillis() - placementTime)/1000;
         if(!isMoved) {
-           return (shelfLife - orderAge - decayRate * orderAge * modifier)/shelfLife;
+            long orderAge = (System.currentTimeMillis() - placementTime)/1000;
+            return (shelfLife - orderAge - decayRate * orderAge * modifier)/shelfLife;
         }
         if(isMoved) {
             long ageOnNewShelf = (System.currentTimeMillis() - moveTime)/1000;
