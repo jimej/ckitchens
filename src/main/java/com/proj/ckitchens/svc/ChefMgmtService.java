@@ -11,13 +11,11 @@ import java.util.concurrent.Executors;
  */
 public class ChefMgmtService {
     private final int numOfChefs;
-//    private final OrderQueue orders;
     private final OrderMgmtService orderMgmtService;
     private final ExecutorService executor;
     private boolean shutdownSignal;
     public ChefMgmtService(int numOfChefs, OrderQueue oq, OrderMgmtService orderMgmtService) {
         this.numOfChefs = numOfChefs;
-//        this.orders = oq;
         this.orderMgmtService = orderMgmtService;
         executor = Executors.newFixedThreadPool(numOfChefs);
         this.shutdownSignal = false;
@@ -46,9 +44,6 @@ public class ChefMgmtService {
 
     public void signalShutdown() {
         this.shutdownSignal = true;
-    }
-    public void shutdown() {
-        this.executor.shutdown();
     }
 
 }

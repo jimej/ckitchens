@@ -34,22 +34,16 @@ public class ShelfMgmtSystem {
             case COLD:
                 if (!SHELF_C.placePackaging(order)) {
                     placePackagingOnOverflow(order);
-//                    overflow.unlock();
                 }
                 break;
             case FROZEN:
                 if (!SHELF_F.placePackaging(order)) {
                     placePackagingOnOverflow(order);
-//                    overflow.unlock();
                 }
         }
     }
 
     public static void readContents(LocalTime timestamp, String triggerEvent) {
-//        overflow.lock();
-//        hot.lock();
-//        cold.lock();
-//        frozen.lock();
         masterLock.lock();
         System.out.println(timestamp + " " + triggerEvent);
         System.out.println("=============================");
@@ -58,10 +52,6 @@ public class ShelfMgmtSystem {
         SHELF_C.readContentOnShelf();
         SHELF_F.readContentOnShelf();
         masterLock.unlock();
-//        frozen.unlock();
-//        cold.unlock();
-//        hot.unlock();
-//        overflow.unlock();
     }
 
     public static void discardPackagingEndOfLife() {
@@ -72,7 +62,6 @@ public class ShelfMgmtSystem {
     }
 
     public static void deliverOrder(Order order) {
-//        !SHELF_O.remove(order) &&
         if (!SHELF_O.remove(order, false)) {
             switch (order.getTemp()) {
                 case HOT:

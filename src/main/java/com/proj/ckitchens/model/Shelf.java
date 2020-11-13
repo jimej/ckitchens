@@ -36,7 +36,6 @@ public class Shelf {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
                 locations.put(order.getId(), freePos);
-                //only for logging and testing
                 switch(order.getTemp()) {
                     case HOT:
                         System.out.println(Shelf.class.getSimpleName() +  " order " + order.getId() + " placed on hot shelf position: " + freePos + " isMoved:" + order.isMoved());
@@ -71,15 +70,6 @@ public class Shelf {
             lock.unlock();
         }
     }
-
-//    public boolean hasAvailableCells() {
-//        lock.lock();
-//        try {
-//            return !availableCells.isEmpty();
-//        } finally {
-//            lock.unlock();
-//        }
-//    }
 
     public int lookup(UUID id) {
         lock.lock();
@@ -144,17 +134,14 @@ public class Shelf {
     }
 
     public void readContentOnShelf() {
-//        lock.lock();
         masterLock.lock();
         int pos = 0;
         while (pos < capacity && cells[pos]/*cells.get(pos) */!= null) {
             Order o = cells[pos];
-//            Order o = cells.get(pos);
             System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
             pos++;
         }
         masterLock.unlock();
-//        lock.unlock();
     }
 
     private void validateStateMaintained() {

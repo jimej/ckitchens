@@ -71,29 +71,11 @@ public class CkitchensApplication {
 			Thread.sleep(60000);//200000
 		} catch(Exception e) {}
 
-//		orderMgmtService.shutdown();
-////		chefMgmtService.shutdown();
-//		chefMgmtService.signalShutdown();
-//
-//
-//		dispatchService.shutdown();
-//		deliveryService.signalShutdown();
-
 		cleanupService.signalShutdown();
 		chefMgmtService.signalShutdown();
 		deliveryService.signalShutdown();
 		orderMgmtService.shutdown();
 		dispatchService.shutdown();
-
-
-//		deliveryService.shutdown();
-//		System.exit(0);
-//		try {
-//			r.join();
-//			t.join();
-//		} catch (Exception e) {
-//
-//		}
 	}
 
 }

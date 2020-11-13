@@ -27,9 +27,4 @@ public class DoublyLinkedNode {
     public int value() {
         return this.value;
     }
-
-//    public String toString() {
-//        return "value: " + this.value + " prev: " + previous + " next: " + next;
-//    }
-
 }

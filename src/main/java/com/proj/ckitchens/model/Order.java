@@ -2,7 +2,6 @@ package com.proj.ckitchens.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.proj.ckitchens.common.OrderQueue;
 import com.proj.ckitchens.common.Temperature;
 
 import java.util.UUID;
@@ -17,21 +16,19 @@ public class Order {
     private long placementTime;
     private long moveTime;
     private long lifeAfterMove = Long.MAX_VALUE;
-//    private long remainingLife = -1;
-    private boolean discarded;
     private boolean isMoved = false;
 
     @JsonCreator
     public Order(
-            @JsonProperty("id")
+        @JsonProperty("id")
         UUID id,
-            @JsonProperty("temp")
+        @JsonProperty("temp")
         Temperature temp,
-            @JsonProperty("name")
+        @JsonProperty("name")
         String name,
-            @JsonProperty("shelfLife")
+        @JsonProperty("shelfLife")
         long shelfLife,
-            @JsonProperty("decayRate")
+        @JsonProperty("decayRate")
         double decayRate
     ) {
         this.id = id;
@@ -61,14 +58,7 @@ public class Order {
         this.placementTime = System.currentTimeMillis();
     }
 
-//    public void setMoveTime(Date date) {
-//        this.moveTime = date;
-//    }
-
     public void setLifeAfterMove() {
-//        if(placementTime != null && moveTime != null) {
-//
-//        }
         long timeOnOverflow = (System.currentTimeMillis() - placementTime)/1000;
         lifeAfterMove = shelfLife - timeOnOverflow - (long)decayRate * timeOnOverflow * 2;
         moveTime = System.currentTimeMillis();
@@ -76,7 +66,6 @@ public class Order {
     }
 
     public double computeRemainingLifeValue(int modifier) {
-//        if(remainingLife == 0) return;
         long orderAge = (System.currentTimeMillis() - placementTime)/1000;
         if(!isMoved) {
            return (shelfLife - orderAge - decayRate * orderAge * modifier)/shelfLife;
@@ -88,10 +77,6 @@ public class Order {
         return Long.MAX_VALUE;
     }
 
-    public void setDiscarded() {
-        this.discarded = true;
-    }
-
     public long getLifeAfterMove() {
         return this.lifeAfterMove;
     }
@@ -99,45 +84,4 @@ public class Order {
     public boolean isMoved() {
         return isMoved;
     }
-
-    //below only for deserialize
-//    public UUID getId() {
-//        return id;
-//    }
-
-//    public void setId(UUID id) {
-//        this.id = id;
-//    }
-
-//    public Temperature getTemp() {
-//        return temp;
-//    }
-
-//    public void setTemp(Temperature temp) {
-//        this.temp = temp;
-//    }
-
-    public String getName() {
-        return name;
-    }
-
-//    public void setName(String name) {
-//        this.name = name;
-//    }
-
-//    public long getShelfLife() {
-//        return shelfLife;
-//    }
-
-//    public void setShelfLife(long shelfLife) {
-//        this.shelfLife = shelfLife;
-//    }
-
-//    public double getDecayRate() {
-//        return decayRate;
-//    }
-
-//    public void setDecayRate(double decayRate) {
-//        this.decayRate = decayRate;
-//    }
 }

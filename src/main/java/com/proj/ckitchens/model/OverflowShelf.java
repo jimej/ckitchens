@@ -16,14 +16,8 @@ public class OverflowShelf extends Shelf {
     private final int capacity;
     private final Order[] cells;
     private final Queue<Integer> availableCells = new LinkedList<>();
-    //    private final Queue<Integer> hotPositions = new LinkedList<>();
-//    private final Queue<Integer> coldPositions = new LinkedList<>();
-//    private final Queue<Integer> frozenPositions = new LinkedList<>();
-//    private final LinkedList<DoublyLinkedNode> hotPositions = new LinkedList<>();
-//    private final LinkedList<DoublyLinkedNode> coldPositions = new LinkedList<>();
-//    private final LinkedList<DoublyLinkedNode> frozenPositions = new LinkedList<>();
-    private static DoublyLinkedNode hotHead, coldHead, frozenHead =  null;
-    private static DoublyLinkedNode hotTail, coldTail, frozenTail =  null;
+    private static DoublyLinkedNode hotHead, coldHead, frozenHead;
+    private static DoublyLinkedNode hotTail, coldTail, frozenTail;
 
     private final Map<UUID, DoublyLinkedNode> locations;
     public OverflowShelf(Lock lock, int capacity) {
@@ -56,7 +50,6 @@ public class OverflowShelf extends Shelf {
                             curr.setPrevious(hotTail);
                             hotTail = curr;
                         }
-//                        hotPositions.offer(freePos);
                         locations.put(order.getId(), curr);
                         order.setPlacementTime();
                         System.out.println(OverflowShelf.class.getSimpleName() + " hot placed on overflow: " + order.getId() + " position " + freePos);
@@ -106,14 +99,6 @@ public class OverflowShelf extends Shelf {
             return (temp == Temperature.HOT && hotTail != null)
                     || (temp == Temperature.COLD && coldTail != null)
                     || (temp == Temperature.FROZEN && frozenTail != null);
-//            switch (temp) {
-//                case HOT:
-//                    if(!hotPositions.isEmpty())
-//                    break;
-//                case COLD:
-//                    break;
-//                case FROZEN:
-//            }
         } finally {
             lock.unlock();
         }
@@ -131,8 +116,6 @@ public class OverflowShelf extends Shelf {
         masterLock.lock();
         switch (temp) {
             case HOT:
-//                    head = hotHead;
-//                    head.getNext().setPrevious(null);
                 pos = hotHead.value();
                 if(hotHead.getNext() != null) {
                     hotHead.getNext().setPrevious(null);
@@ -209,7 +192,6 @@ public class OverflowShelf extends Shelf {
                     temp = nodeMaintenance(node, hotHead, hotTail);
                     hotHead = temp[0];
                     hotTail = temp[1];
-//                    hotPositions.remove(pos);
                     break;
                 case COLD:
                     temp = nodeMaintenance(node, coldHead, coldTail);
@@ -261,7 +243,6 @@ public class OverflowShelf extends Shelf {
                         temp = nodeMaintenance(node, hotHead, hotTail);
                         hotHead = temp[0];
                         hotTail = temp[1];
-//                    hotPositions.remove(pos);
                         break;
                     case COLD:
                         temp = nodeMaintenance(node, coldHead, coldTail);
@@ -310,7 +291,6 @@ public class OverflowShelf extends Shelf {
                             temp = nodeMaintenance(node, hotHead, hotTail);
                             hotHead = temp[0];
                             hotTail = temp[1];
-//                    hotPositions.remove(pos);
                             break;
                         case COLD:
                             temp = nodeMaintenance(node, coldHead, coldTail);
@@ -336,7 +316,6 @@ public class OverflowShelf extends Shelf {
     }
 
     public void readContentOnShelf() {
-//        lock.lock();
         masterLock.lock();
         int pos = 0;
         while (pos < capacity && cells[pos] != null) {
@@ -345,22 +324,11 @@ public class OverflowShelf extends Shelf {
             pos++;
         }
         masterLock.unlock();
-//        lock.unlock();
     }
 
-
-    //    public boolean hasAvailableCells() {
-//        lock.lock();
-//        try {
-//            return !availableCells.isEmpty();
-//        } finally {
-//            lock.unlock();
-//        }
-//    }
     private DoublyLinkedNode[] nodeMaintenance(DoublyLinkedNode node, DoublyLinkedNode h, DoublyLinkedNode t) {
         lock.lock();
         if(node.getPrevious() == null && node.getNext() == null) {
-//                        hotHead = hotTail = null;
             h = null;
             t = null;
         } else if (node.getNext() == null) {
