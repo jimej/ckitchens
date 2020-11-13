@@ -147,13 +147,13 @@ public class OverflowShelf extends Shelf {
 
             switch (o.getTemp()) {
                 case HOT:
-                    hotPositions.remove(pos);
+                    hotPositions.remove(Integer.valueOf(pos));
                     break;
                 case COLD:
-                    coldPositions.remove(pos);
+                    coldPositions.remove(Integer.valueOf(pos));
                     break;
                 case FROZEN:
-                    frozenPositions.remove(pos);
+                    frozenPositions.remove(Integer.valueOf(pos));
             }
             System.out.println(OverflowShelf.class.getSimpleName() + " discarded random order " + o.getId() + " from position " + pos);
             ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - discarded: random order " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp());
@@ -192,13 +192,13 @@ public class OverflowShelf extends Shelf {
 
                 switch (order.getTemp()) {
                     case HOT:
-                        hotPositions.remove(pos);
+                        hotPositions.remove(Integer.valueOf(pos));
                         break;
                     case COLD:
-                        coldPositions.remove(pos);
+                        coldPositions.remove(Integer.valueOf(pos));
                         break;
                     case FROZEN:
-                        frozenPositions.remove(pos);
+                        frozenPositions.remove(Integer.valueOf(pos));
                 }
                 if(pastDueTime) {
                     System.out.println(OverflowShelf.class.getSimpleName() + " cleaned from overflow shelf pos: " + order.getId() + " " + pos);
@@ -231,13 +231,13 @@ public class OverflowShelf extends Shelf {
                     availableCells.offer(entry.getValue());
                     switch (o.getTemp()) {
                         case HOT:
-                            hotPositions.remove(entry.getValue());
+                            hotPositions.remove(Integer.valueOf(entry.getValue()));
                             break;
                         case COLD:
-                            coldPositions.remove(entry.getValue());
+                            coldPositions.remove(Integer.valueOf(entry.getValue()));
                             break;
                         case FROZEN:
-                            frozenPositions.remove(entry.getValue());
+                            frozenPositions.remove(Integer.valueOf(entry.getValue()));
                     }
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp());
                     masterLock.unlock();
