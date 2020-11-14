@@ -62,7 +62,7 @@ public class OverflowShelf extends Shelf {
                         frozenTail = temp[1];
                 }
                 validateStateMaintained();
-                ShelfMgmtSystem.readContents(LocalTime.now(),"INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
                 return true;
             }
             return false;
@@ -114,7 +114,7 @@ public class OverflowShelf extends Shelf {
         validateStateMaintained();
         removeOrderHelper(temp, pos, id);
         validateStateMaintained();
-        ShelfMgmtSystem.readContents(LocalTime.now(),"MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf", OverflowShelf.class.getSimpleName());
+        ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf", OverflowShelf.class.getSimpleName());
         try {
             return o;
         } finally {
@@ -140,7 +140,7 @@ public class OverflowShelf extends Shelf {
             validateStateMaintained();
             removeOrderHelper(o.getTemp(), pos, o.getId());
             validateStateMaintained();
-            ShelfMgmtSystem.readContents(LocalTime.now(),"REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
+            ShelfMgmtSystem.readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
             return o;
         } finally {
             masterLock.unlock();
@@ -167,7 +167,7 @@ public class OverflowShelf extends Shelf {
 //                if(pastDueTime) {
 //                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
 //                } else {
-                    ShelfMgmtSystem.readContents(LocalTime.now(),"REMOVAL - delivered: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
 //                }
                 return true;
             }
@@ -215,7 +215,7 @@ public class OverflowShelf extends Shelf {
                             frozenTail = temp[1];
                     }
                     validateStateMaintained();
-                    ShelfMgmtSystem.readContents(LocalTime.now(),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
                     masterLock.unlock();
                 }
             }
@@ -239,12 +239,6 @@ public class OverflowShelf extends Shelf {
                 System.out.println("Overflow shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(2) + ", pos: " + pos + ", temp:" + o.getTemp());
             }
         }
-//        int pos = 0;
-//        while (pos < capacity && cells[pos] != null) {
-//            Order o = cells[pos];
-//            System.out.println("Overflow shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(2) + ", pos: " + pos + ", temp:" + o.getTemp());
-//            pos++;
-//        }
         masterLock.unlock();
     }
 

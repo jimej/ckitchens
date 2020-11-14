@@ -55,9 +55,9 @@ public class ShelfMgmtSystem {
      * @param className
      * @param triggerEvent
      */
-    public static void readContents(LocalTime timestamp, String triggerEvent, String className) {
+    public static void readContents(String triggerEvent, String className) {
         masterLock.lock();
-        System.out.println(timestamp  + " | " + triggerEvent + " [" + className +"] ");
+        System.out.println(LocalTime.now()  + " | " + triggerEvent + " [" + className +"] ");
         System.out.println("=============================");
         SHELF_O.readContentOnShelf();
         SHELF_H.readContentOnShelf();
