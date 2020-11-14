@@ -51,7 +51,6 @@ public class ShelfMgmtSystem {
     /**
      * readContents on all shelves
      * masterLock is used to lock all shelves before reading.
-     * @param timestamp
      * @param className
      * @param triggerEvent
      */
@@ -109,19 +108,20 @@ public class ShelfMgmtSystem {
             overflow.lock();
             hot.lock();
             if (SHELF_O.hasOnShelf(Temperature.HOT) && SHELF_H.isCellAvailable()) {
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to hot shelf to place " + order.getId() + " on overflow shelf");
-                Order o = SHELF_O.removeBasedOnTemperature(Temperature.HOT);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
-                o.setLifeAfterMove();
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
-                SHELF_H.placeOnShelf(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on hot shelf and yielded overflow shelf position to order " + order.getId());
-                SHELF_O.placeOnShelf(order);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to hot position on overflow by order " + o.getId());
+                vacateFromOverflow(order, Temperature.HOT, SHELF_H);
+
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to hot shelf to place " + order.getId() + " on overflow shelf");
+//                Order o = SHELF_O.removeBasedOnTemperature(Temperature.HOT);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
+//                o.setLifeAfterMove();
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+//                SHELF_H.placeOnShelf(o);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on hot shelf and yielded overflow shelf position to order " + order.getId());
+//                SHELF_O.placeOnShelf(order);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to hot position on overflow by order " + o.getId());
                 return;
             }
-
         } finally {
             hot.unlock();
             overflow.unlock();
@@ -130,17 +130,19 @@ public class ShelfMgmtSystem {
         try {
             overflow.lock();
             cold.lock();
+
             if (SHELF_O.hasOnShelf(Temperature.COLD) && SHELF_C.isCellAvailable()) {
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to cold shelf to place " + order.getId() + " on overflow shelf");
-                Order o = SHELF_O.removeBasedOnTemperature(Temperature.COLD);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
-                o.setLifeAfterMove();
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
-                SHELF_C.placeOnShelf(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on cold shelf and yielded overflow shelf position to order " + order.getId());
-                SHELF_O.placeOnShelf(order);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to cold position on overflow by order " + o.getId());
+                vacateFromOverflow(order, Temperature.COLD, SHELF_C);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to cold shelf to place " + order.getId() + " on overflow shelf");
+//                Order o = SHELF_O.removeBasedOnTemperature(Temperature.COLD);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
+//                o.setLifeAfterMove();
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+//                SHELF_C.placeOnShelf(o);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on cold shelf and yielded overflow shelf position to order " + order.getId());
+//                SHELF_O.placeOnShelf(order);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to cold position on overflow by order " + o.getId());
                 return;
             }
 
@@ -153,16 +155,17 @@ public class ShelfMgmtSystem {
             overflow.lock();
             frozen.lock();
             if (SHELF_O.hasOnShelf(Temperature.FROZEN) && SHELF_F.isCellAvailable()) {
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
-                Order o = SHELF_O.removeBasedOnTemperature(Temperature.FROZEN);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
-                o.setLifeAfterMove();
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
-                SHELF_F.placeOnShelf(o);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
-                SHELF_O.placeOnShelf(order);
-                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
+                vacateFromOverflow(order, Temperature.FROZEN, SHELF_F);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
+//                Order o = SHELF_O.removeBasedOnTemperature(Temperature.FROZEN);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
+//                o.setLifeAfterMove();
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+//                SHELF_F.placeOnShelf(o);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
+//                SHELF_O.placeOnShelf(order);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
                 return;
             }
         } finally {
@@ -178,8 +181,6 @@ public class ShelfMgmtSystem {
         } else { //only happens if overflow has 0 capacity
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is thrown away. REMOVAL - thrown away");
         }
-
-
         overflow.unlock();
     }
 
@@ -194,5 +195,20 @@ public class ShelfMgmtSystem {
             moveOrderFromOverflow(order);
         }
         overflow.unlock();
+    }
+
+    private static void vacateFromOverflow(Order order, Temperature temp, Shelf shelf) {
+//        if (SHELF_O.hasOnShelf(temp) && shelf.isCellAvailable()) {
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
+            Order o = SHELF_O.removeBasedOnTemperature(temp);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
+            o.setLifeAfterMove();
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
+            shelf.placeOnShelf(o);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
+            SHELF_O.placeOnShelf(order);
+//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
+//        }
     }
 }
