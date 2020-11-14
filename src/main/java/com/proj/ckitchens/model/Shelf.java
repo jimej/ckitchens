@@ -45,9 +45,9 @@ public class Shelf {
                 validateStateMaintained();
                 if(!order.isMoved()) {
                     order.setPlacementTime();
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents(LocalTime.now(),"INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
                 } else {
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents(LocalTime.now(),"MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
                 }
                 return true;
             }
@@ -81,7 +81,7 @@ public class Shelf {
 //            if(pastDueTime) {
 //                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
 //            } else {
-                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents(LocalTime.now(),"REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
 //            }
             validateStateMaintained();
         } else {
@@ -106,7 +106,7 @@ public class Shelf {
                     cells[entry.getValue()] = null;
                     availableCells.offer(entry.getValue());
                     validateStateMaintained();
-                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents(LocalTime.now(),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
                     masterLock.unlock();
                 }
             }
@@ -120,12 +120,18 @@ public class Shelf {
 
     public void readContentOnShelf() {
         masterLock.lock();
-        int pos = 0;
-        while (pos < capacity && cells[pos]!= null) {
+//        int pos = 0;
+        for (int pos = 0; pos < capacity; pos++) {
             Order o = cells[pos];
-            System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
-            pos++;
+            if (o != null) {
+                System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
+            }
         }
+//        while (pos < capacity && cells[pos]!= null) {
+//            Order o = cells[pos];
+//            System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
+//            pos++;
+//        }
         masterLock.unlock();
     }
 
