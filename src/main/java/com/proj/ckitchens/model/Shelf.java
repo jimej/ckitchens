@@ -37,10 +37,12 @@ public class Shelf {
         try {
             lock.lock();
             masterLock.lock();
+            validateStateMaintained();
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
                 locations.put(order.getId(), freePos);
+                validateStateMaintained();
                 if(!order.isMoved()) {
                     order.setPlacementTime();
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
@@ -70,6 +72,7 @@ public class Shelf {
         lock.lock();
 
         Integer pos = locations.get(id);
+        validateStateMaintained();
         masterLock.lock();
         if (pos != null) {
             cells[pos] = null;
@@ -80,6 +83,7 @@ public class Shelf {
 //            } else {
                 ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
 //            }
+            validateStateMaintained();
         } else {
             System.out.println(Shelf.class.getSimpleName() + " can not find on shelf: " + id);
         }
@@ -89,6 +93,7 @@ public class Shelf {
 
     public void cleanup() {
         lock.lock();
+        validateStateMaintained();
         try {
             Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
             while(it.hasNext()) {
@@ -100,6 +105,7 @@ public class Shelf {
                     it.remove();
                     cells[entry.getValue()] = null;
                     availableCells.offer(entry.getValue());
+                    validateStateMaintained();
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
                     masterLock.unlock();
                 }
@@ -124,6 +130,26 @@ public class Shelf {
     }
 
     private void validateStateMaintained() {
-
+        lock.lock();
+        try {
+            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<UUID, Integer> a = it.next();
+                UUID id = a.getKey();
+                int pos = a.getValue();
+                assert cells[pos].getId() == id && cells[pos].getTemp() == this.temperature;
+            }
+            Iterator<Integer> listIt = availableCells.iterator();
+            while (listIt.hasNext()) {
+                int temp = listIt.next();
+                assert cells[temp] == null;
+            }
+            assert locations.size() + availableCells.size() == capacity;
+        } catch (Exception e ) {
+            System.out.println(e);
+        }
+         finally {
+            lock.unlock();
+        }
     }
 }

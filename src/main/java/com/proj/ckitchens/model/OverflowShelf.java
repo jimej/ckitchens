@@ -39,6 +39,7 @@ public class OverflowShelf extends Shelf {
         try {
             lock.lock();
             masterLock.lock();
+            validateStateMaintained();
             if (!availableCells.isEmpty()) {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
@@ -53,6 +54,7 @@ public class OverflowShelf extends Shelf {
                     case FROZEN:
                         putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
                 }
+                validateStateMaintained();
                 ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
                 return true;
             }
@@ -102,7 +104,9 @@ public class OverflowShelf extends Shelf {
         Order o = cells[pos];
         UUID id = o.getId();
         masterLock.lock();
+        validateStateMaintained();
         removeOrderHelper(temp, pos, id);
+        validateStateMaintained();
         ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf", OverflowShelf.class.getSimpleName());
         try {
             return o;
@@ -126,7 +130,9 @@ public class OverflowShelf extends Shelf {
             if (capacity == 0) return null;
             int pos = new Random().nextInt(capacity);
             Order o = cells[pos];
+            validateStateMaintained();
             removeOrderHelper(o.getTemp(), pos, o.getId());
+            validateStateMaintained();
             ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
             return o;
         } finally {
@@ -138,7 +144,6 @@ public class OverflowShelf extends Shelf {
     /**
      * remove an order from shelf for delivery
      * @param order
-     * @param pastDueTime
      * @return
      */
     public boolean removeForDelivery(Order order) {
@@ -149,7 +154,9 @@ public class OverflowShelf extends Shelf {
         try {
             masterLock.lock();
             if (pos != null) {
+                validateStateMaintained();
                 removeOrderHelper(order.getTemp(), pos, order.getId());
+                validateStateMaintained();
 //                if(pastDueTime) {
 //                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
 //                } else {
@@ -179,6 +186,7 @@ public class OverflowShelf extends Shelf {
                 double lifeValue = o.computeRemainingLifeValue(2);
                 if (lifeValue <= 0) {
                     masterLock.lock();
+                    validateStateMaintained();
                     it.remove();
                     cells[node.value()] = null;
                     availableCells.offer(node.value());
@@ -192,6 +200,7 @@ public class OverflowShelf extends Shelf {
                         case FROZEN:
                             extractNode(node, frozenHead, frozenTail);
                     }
+                    validateStateMaintained();
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
                     masterLock.unlock();
                 }
@@ -273,5 +282,49 @@ public class OverflowShelf extends Shelf {
         }
         locations.put(o.getId(), curr);
         o.setPlacementTime();
+    }
+
+    private void validateStateMaintained() {
+        Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
+        while(it.hasNext()) {
+            Map.Entry<UUID, DoublyLinkedNode> a = it.next();
+            UUID id = a.getKey();
+            int pos = a.getValue().value();
+            assert cells[pos].getId() == id;
+        }
+        Iterator<Integer> listIt = availableCells.iterator();
+        while(listIt.hasNext()) {
+            int temp = listIt.next();
+            assert cells[temp] == null;
+        }
+        assert locations.size() + availableCells.size() == capacity;
+        assert (hotHead == null && hotTail == null) || (hotHead != null && hotTail != null);
+        assert (coldHead == null && coldTail == null) || (coldHead != null && coldTail != null);
+        assert (frozenHead == null && frozenTail == null) || (frozenHead != null && frozenTail != null);
+        assert (hotHead != hotTail) || (hotHead.previous() == null && hotTail.next() == null);
+        assert (coldHead != coldTail) || (coldHead.previous() == null && coldTail.next() == null);
+        assert (frozenHead != frozenTail) || (frozenHead.previous() == null && frozenTail.next() == null);
+        DoublyLinkedNode node = hotHead;
+        int sum = 0;
+        while(node != null) {
+            Order o = cells[node.value()];
+            assert o != null && o.getTemp() == Temperature.HOT;
+            sum++;
+            node = node.next();
+        }
+        node = coldHead;
+        while(node != null) {
+            Order o = cells[node.value()];
+            assert o != null && o.getTemp() == Temperature.COLD;
+            sum++;
+            node = node.next();
+        }
+        node = frozenHead;
+        while(node != null) {
+            Order o = cells[node.value()];
+            assert o != null && o.getTemp() == Temperature.FROZEN;
+            sum++;
+            node = node.next();
+        }
     }
 }

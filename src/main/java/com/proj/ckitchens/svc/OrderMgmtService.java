@@ -5,14 +5,16 @@ import com.proj.ckitchens.common.LockedQueue;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * order intake and publish to queue
  */
 public class OrderMgmtService {
     private final ExecutorService executor;
-    private final LockedQueue<Order> orders;
-    public OrderMgmtService(LockedQueue<Order> oq) {
+    private final LinkedBlockingQueue<Order> orders;
+    public OrderMgmtService(LinkedBlockingQueue<Order> oq) {
         this.executor = Executors.newFixedThreadPool(2);
         this.orders = oq;
     }

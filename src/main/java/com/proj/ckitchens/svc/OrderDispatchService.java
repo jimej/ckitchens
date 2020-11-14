@@ -4,19 +4,16 @@ package com.proj.ckitchens.svc;
 import com.proj.ckitchens.common.LockedQueue;
 import com.proj.ckitchens.model.Order;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * publish order to delivery system; get order for delivery
  */
 public class OrderDispatchService {
-    private final LockedQueue<Order> deliveryQueue;
-    private final LockedQueue<Order> orders;
+    private final LinkedBlockingQueue<Order> deliveryQueue;
+    private final LinkedBlockingQueue<Order> orders;
     private final ExecutorService executor;
-    public OrderDispatchService(LockedQueue<Order> orders, LockedQueue<Order> deliveryQueue) {
+    public OrderDispatchService(LinkedBlockingQueue<Order> orders, LinkedBlockingQueue<Order> deliveryQueue) {
         this.orders = orders;
         this.deliveryQueue = deliveryQueue;
         executor = Executors.newFixedThreadPool(2);
@@ -42,8 +39,8 @@ public class OrderDispatchService {
         return getOrderFromQueue(deliveryQueue);
     }
 
-    private Order getOrderFromQueue(LockedQueue<Order> queue) {
-        Future<Order> orderFuture = executor.submit(() -> queue.get());
+    private Order getOrderFromQueue(LinkedBlockingQueue<Order> queue) {
+        Future<Order> orderFuture = executor.submit(() -> queue.poll());
 
         Order order;
         try {

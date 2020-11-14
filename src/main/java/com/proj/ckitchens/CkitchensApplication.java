@@ -8,6 +8,7 @@ import com.proj.ckitchens.utils.OrderParser;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @SpringBootApplication
 public class CkitchensApplication {
@@ -19,8 +20,8 @@ public class CkitchensApplication {
 
 		List<Order> orders = OrderParser.readFromFile("orders.json");
 
-		LockedQueue<Order> orderQueue = new LockedQueue<>();
-		LockedQueue<Order> deliveryQueue = new LockedQueue<>();
+		LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
+		LinkedBlockingQueue<Order> deliveryQueue = new LinkedBlockingQueue<>();
 		OrderDispatchService dispatchService = new OrderDispatchService(orderQueue, deliveryQueue);
 		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue);
 		ChefMgmtService chefMgmtService = new ChefMgmtService(3, dispatchService);
