@@ -155,14 +155,15 @@ public class OverflowShelf extends Shelf {
      */
     public boolean removeForDelivery(Order order) {
         lock.lock();
+
+        // node is null when the order is not on this shelf
+        // not arrived, discarded, cleaned, moved
         DoublyLinkedNode node = locations.get(order.getId());
 //        if (node == null) throw new DataIntegrityViolation("not correct");
         System.out.println(" node not found on overflow shelf");
-        Integer pos = node != null? node.value() : null;
-
         try {
             masterLock.lock();
-            if (pos != null) {
+            if (node != null) {
                 validateStateMaintained();
                 removeOrderHelper(order.getId());
                 validateStateMaintained();
@@ -251,12 +252,16 @@ public class OverflowShelf extends Shelf {
         }
     }
 
+    /**
+     * precondition: the order must be on the shelf
+     * @param id
+     */
     private void removeOrderHelper(UUID id) {
         lock.lock();
         DoublyLinkedNode node = locations.remove(id);
-        if (node == null) throw new DataIntegrityViolation("wrong");
+        if (node == null) throw new DataIntegrityViolation("Error: can not remove order not on shelf - order " + id);
         Order o = cells[node.value()];
-        if (o == null) throw new DataIntegrityViolation("incorrect");
+        if (o == null) throw new DataIntegrityViolation("Error: order in locations map but not in cells");
 
         cells[node.value()] = null;
 

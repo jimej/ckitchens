@@ -2,6 +2,7 @@ package com.proj.ckitchens.model;
 
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
+import com.proj.ckitchens.utils.DataIntegrityViolation;
 
 import java.time.LocalTime;
 import java.util.*;
@@ -75,9 +76,10 @@ public class Shelf {
         validateStateMaintained();
         masterLock.lock();
         if (pos != null) {
-            cells[pos] = null;
-            availableCells.offer(pos);
-            locations.remove(id);
+            removeOrderHelper(id);
+//            cells[pos] = null;
+//            availableCells.offer(pos);
+//            locations.remove(id);
 //            if(pastDueTime) {
 //                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
 //            } else {
@@ -95,21 +97,35 @@ public class Shelf {
         lock.lock();
         validateStateMaintained();
         try {
-            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
-            while(it.hasNext()) {
-               Map.Entry<UUID, Integer> entry = it.next();
-               Order o = cells[entry.getValue()];
-                double lifeValue = o.computeRemainingLifeValue(1);
-                if (lifeValue <= 0) {
-                    masterLock.lock();
-                    it.remove();
-                    cells[entry.getValue()] = null;
-                    availableCells.offer(entry.getValue());
+            for (int i = 0; i < capacity; i++) {
+                Order order = cells[i];
+                if (order == null) continue;
+                double lifeValue = order.computeRemainingLifeValue(1);
+                if (lifeValue <=0) {
                     validateStateMaintained();
-                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
+                    masterLock.lock();
+                    removeOrderHelper(order.getId());
+                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + temperature + " shelf; temp: " + order.getTemp(), Shelf.class.getSimpleName());
+                    validateStateMaintained();
                     masterLock.unlock();
                 }
             }
+
+//            Iterator<Map.Entry<UUID, Integer>> it = locations.entrySet().iterator();
+//            while(it.hasNext()) {
+//               Map.Entry<UUID, Integer> entry = it.next();
+//               Order o = cells[entry.getValue()];
+//                double lifeValue = o.computeRemainingLifeValue(1);
+//                if (lifeValue <= 0) {
+//                    masterLock.lock();
+//                    it.remove();
+//                    cells[entry.getValue()] = null;
+//                    availableCells.offer(entry.getValue());
+//                    validateStateMaintained();
+//                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + o.getId() + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
+//                    masterLock.unlock();
+//                }
+//            }
         } catch (Exception e ) {
             e.printStackTrace();
         }finally {
@@ -127,6 +143,14 @@ public class Shelf {
             }
         }
         masterLock.unlock();
+    }
+
+    private void removeOrderHelper(UUID id) {
+        Integer pos =  locations.remove(id);
+        if(pos == null) throw new DataIntegrityViolation("Error: this method ");
+        cells[pos] = null;
+        availableCells.offer(pos);
+//        locations.remove(id);
     }
 
     private void validateStateMaintained() {
