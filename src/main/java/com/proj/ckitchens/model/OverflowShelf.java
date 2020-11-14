@@ -44,15 +44,22 @@ public class OverflowShelf extends Shelf {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
                 DoublyLinkedNode curr = new DoublyLinkedNode(freePos);
+                DoublyLinkedNode[] temp;
                 switch(order.getTemp()) {
                     case HOT:
-                        putOrderOnOverflowHelper(order, hotHead, hotTail, curr);
+                        temp = putOrderOnOverflowHelper(order, hotHead, hotTail, curr);
+                        hotHead = temp[0];
+                        hotTail = temp[1];
                         break;
                     case COLD:
-                        putOrderOnOverflowHelper(order, coldHead, coldTail, curr);
+                        temp = putOrderOnOverflowHelper(order, coldHead, coldTail, curr);
+                        coldHead = temp[0];
+                        coldTail = temp[1];
                         break;
                     case FROZEN:
-                        putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
+                        temp = putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
+                        frozenHead = temp[0];
+                        frozenTail = temp[1];
                 }
                 validateStateMaintained();
                 ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
@@ -190,15 +197,22 @@ public class OverflowShelf extends Shelf {
                     it.remove();
                     cells[node.value()] = null;
                     availableCells.offer(node.value());
+                    DoublyLinkedNode[] temp;
                     switch (o.getTemp()) {
                         case HOT:
-                            extractNode(node, hotHead, hotTail);
+                            temp = extractNode(node, hotHead, hotTail);
+                            hotHead = temp[0];
+                            hotTail = temp[1];
                             break;
                         case COLD:
-                            extractNode(node, coldHead, coldTail);
+                            temp = extractNode(node, coldHead, coldTail);
+                            coldHead = temp[0];
+                            coldTail = temp[1];
                             break;
                         case FROZEN:
-                            extractNode(node, frozenHead, frozenTail);
+                            temp = extractNode(node, frozenHead, frozenTail);
+                            frozenHead = temp[0];
+                            frozenTail = temp[1];
                     }
                     validateStateMaintained();
                     ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
@@ -235,96 +249,147 @@ public class OverflowShelf extends Shelf {
      * @param t
      * @return
      */
-    private void extractNode(DoublyLinkedNode node, DoublyLinkedNode h, DoublyLinkedNode t) {
+    private DoublyLinkedNode[] extractNode(DoublyLinkedNode node, DoublyLinkedNode h, DoublyLinkedNode t) {
         lock.lock();
-        if(node.previous() == null && node.next() == null) {
-            h = null;
-            t = null;
-        } else if (node.next() == null) {
-            node.previous().setNext(null);
-            t = node.previous();
-        } else if (node.previous() == null) {
-            node.next().setPrevious(null);
-            h = node.next();
-        } else {
-            node.next().setPrevious(node.previous());
-            node.previous().setNext(node.next());
+        DoublyLinkedNode[] temp = new DoublyLinkedNode[] {h, t};
+        try {
+            if (node.previous() == null && node.next() == null) {
+                temp[0] = null;
+                temp[1] = null;
+            } else if (node.next() == null) {
+                node.previous().setNext(null);
+                temp[1] = node.previous();
+            } else if (node.previous() == null) {
+                node.next().setPrevious(null);
+                temp[0] = node.next();
+            } else {
+                node.next().setPrevious(node.previous());
+                node.previous().setNext(node.next());
+            }
+            return temp;
+        } finally {
+            lock.unlock();
         }
-        lock.unlock();
     }
 
-    private void removeOrderHelper(Temperature temp, int pos, UUID id) {
+    private void removeOrderHelper(Temperature temperature, int pos, UUID id) {
         lock.lock();
         cells[pos] = null;
         DoublyLinkedNode node = locations.remove(id);
         availableCells.offer(pos);
-        switch (temp) {
+        DoublyLinkedNode[] temp;
+        switch (temperature) {
             case HOT:
-                extractNode(node, hotHead, hotTail);
+                temp = extractNode(node, hotHead, hotTail);
+                hotHead = temp[0];
+                hotTail = temp[1];
                 break;
             case COLD:
-                extractNode(node, coldHead, coldTail);
+                temp = extractNode(node, coldHead, coldTail);
+                coldHead = temp[0];
+                coldTail = temp[1];
                 break;
             case FROZEN:
-                extractNode(node, frozenHead, frozenTail);
+                temp = extractNode(node, frozenHead, frozenTail);
+                frozenHead = temp[0];
+                frozenTail = temp[1];
         }
         lock.unlock();
     }
 
-    private void putOrderOnOverflowHelper(Order o, DoublyLinkedNode h, DoublyLinkedNode t, DoublyLinkedNode curr) {
-        if(t == null) {
-            t = curr;
-            h = curr;
-        } else {
-            t.setNext(curr);
-            curr.setPrevious(t);
-            t = curr;
+    private DoublyLinkedNode[] putOrderOnOverflowHelper(Order o, DoublyLinkedNode h, DoublyLinkedNode t, DoublyLinkedNode curr) {
+        lock.lock();
+        DoublyLinkedNode[] temp = new DoublyLinkedNode[] {h, t};
+        try {
+            if (t == null) {
+                temp[0] = curr;
+                temp[1] = curr;
+            } else {
+                t.setNext(curr);
+                curr.setPrevious(t);
+                temp[1] = curr;
+            }
+            locations.put(o.getId(), curr);
+            o.setPlacementTime();
+            return temp;
+        } finally {
+            lock.unlock();
         }
-        locations.put(o.getId(), curr);
-        o.setPlacementTime();
+
     }
 
     private void validateStateMaintained() {
-        Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
-        while(it.hasNext()) {
-            Map.Entry<UUID, DoublyLinkedNode> a = it.next();
-            UUID id = a.getKey();
-            int pos = a.getValue().value();
-            assert cells[pos].getId() == id;
-        }
-        Iterator<Integer> listIt = availableCells.iterator();
-        while(listIt.hasNext()) {
-            int temp = listIt.next();
-            assert cells[temp] == null;
-        }
-        assert locations.size() + availableCells.size() == capacity;
-        assert (hotHead == null && hotTail == null) || (hotHead != null && hotTail != null);
-        assert (coldHead == null && coldTail == null) || (coldHead != null && coldTail != null);
-        assert (frozenHead == null && frozenTail == null) || (frozenHead != null && frozenTail != null);
-        assert (hotHead != hotTail) || (hotHead.previous() == null && hotTail.next() == null);
-        assert (coldHead != coldTail) || (coldHead.previous() == null && coldTail.next() == null);
-        assert (frozenHead != frozenTail) || (frozenHead.previous() == null && frozenTail.next() == null);
-        DoublyLinkedNode node = hotHead;
-        int sum = 0;
-        while(node != null) {
-            Order o = cells[node.value()];
-            assert o != null && o.getTemp() == Temperature.HOT;
-            sum++;
-            node = node.next();
-        }
-        node = coldHead;
-        while(node != null) {
-            Order o = cells[node.value()];
-            assert o != null && o.getTemp() == Temperature.COLD;
-            sum++;
-            node = node.next();
-        }
-        node = frozenHead;
-        while(node != null) {
-            Order o = cells[node.value()];
-            assert o != null && o.getTemp() == Temperature.FROZEN;
-            sum++;
-            node = node.next();
+        lock.lock();
+        try {
+            Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<UUID, DoublyLinkedNode> a = it.next();
+                UUID id = a.getKey();
+                int pos = a.getValue().value();
+                assert cells[pos].getId() == id;
+            }
+            Iterator<Integer> listIt = availableCells.iterator();
+            while (listIt.hasNext()) {
+                int temp = listIt.next();
+                assert cells[temp] == null;
+            }
+            assert locations.size() + availableCells.size() == capacity;
+            assert (hotHead == null && hotTail == null) || (hotHead != null && hotTail != null);
+            assert (coldHead == null && coldTail == null) || (coldHead != null && coldTail != null);
+            assert (frozenHead == null && frozenTail == null) || (frozenHead != null && frozenTail != null);
+            assert (hotHead != hotTail) || (hotHead == null && hotTail == null) || (hotHead.previous() == null && hotTail.next() == null);
+            assert (coldHead != coldTail) || (coldHead == null && coldTail == null) || (coldHead.previous() == null && coldTail.next() == null);
+            assert (frozenHead != frozenTail) ||(frozenHead==null && frozenTail ==null)|| (frozenHead.previous() == null && frozenTail.next() == null);
+            DoublyLinkedNode node = hotHead;
+            int sum = 0;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.HOT;
+                sum++;
+                node = node.next();  //also verify the middle node: next previous not null //maybe do a previous loop
+            }
+            node = coldHead;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.COLD;
+                sum++;
+                node = node.next();
+            }
+            node = frozenHead;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.FROZEN;
+                sum++;
+                node = node.next();
+            }
+            assert sum == locations.size();
+            sum = 0;
+            node = hotTail;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.HOT;
+                sum++;
+                node = node.previous();  //also verify the middle node: next previous not null //maybe do a previous loop
+            }
+            node = coldTail;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.COLD;
+                sum++;
+                node = node.previous();
+            }
+            node = frozenTail;
+            while (node != null) {
+                Order o = cells[node.value()];
+                assert o != null && o.getTemp() == Temperature.FROZEN;
+                sum++;
+                node = node.previous();
+            }
+            assert sum == locations.size();
+        }catch (Exception e) {
+            System.out.println(e);
+        } finally {
+            lock.unlock();
         }
     }
 }
