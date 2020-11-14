@@ -3,6 +3,7 @@ package com.proj.ckitchens.model;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.common.DoublyLinkedNode;
+import com.proj.ckitchens.utils.DataIntegrityViolation;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 
@@ -111,7 +112,7 @@ public class OverflowShelf extends Shelf {
         UUID id = o.getId();
         masterLock.lock();
         validateStateMaintained();
-        removeOrderHelper(temp, pos, id);
+        removeOrderHelper(id);
         validateStateMaintained();
         ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf", OverflowShelf.class.getSimpleName());
         try {
@@ -137,7 +138,7 @@ public class OverflowShelf extends Shelf {
             int pos = new Random().nextInt(capacity);
             Order o = cells[pos];
             validateStateMaintained();
-            removeOrderHelper(o.getTemp(), pos, o.getId());
+            removeOrderHelper(o.getId());
             validateStateMaintained();
             ShelfMgmtSystem.readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
             return o;
@@ -155,13 +156,15 @@ public class OverflowShelf extends Shelf {
     public boolean removeForDelivery(Order order) {
         lock.lock();
         DoublyLinkedNode node = locations.get(order.getId());
+//        if (node == null) throw new DataIntegrityViolation("not correct");
+        System.out.println(" node not found on overflow shelf");
         Integer pos = node != null? node.value() : null;
 
         try {
             masterLock.lock();
             if (pos != null) {
                 validateStateMaintained();
-                removeOrderHelper(order.getTemp(), pos, order.getId());
+                removeOrderHelper(order.getId());
                 validateStateMaintained();
 //                if(pastDueTime) {
 //                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
@@ -183,42 +186,19 @@ public class OverflowShelf extends Shelf {
     public void cleanup() {
         lock.lock();
         try {
-            Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
-            while(it.hasNext()) {
-                Map.Entry<UUID, DoublyLinkedNode> entry = it.next();
-                DoublyLinkedNode node = entry.getValue();
-                Order o = cells[node.value()];
-
-                double lifeValue = o.computeRemainingLifeValue(2);
-                if (lifeValue <= 0) {
+            for (int i = 0; i < capacity; i++) {
+                Order order = cells[i];
+                if (order == null) continue;
+                double lifeValue = order.computeRemainingLifeValue(2);
+                if (lifeValue <=0) {
+                    validateStateMaintained();
                     masterLock.lock();
+                    removeOrderHelper(order.getId());
+                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
                     validateStateMaintained();
-                    it.remove();
-                    cells[node.value()] = null;
-                    availableCells.offer(node.value());
-                    DoublyLinkedNode[] temp;
-                    switch (o.getTemp()) {
-                        case HOT:
-                            temp = extractNode(node, hotHead, hotTail);
-                            hotHead = temp[0];
-                            hotTail = temp[1];
-                            break;
-                        case COLD:
-                            temp = extractNode(node, coldHead, coldTail);
-                            coldHead = temp[0];
-                            coldTail = temp[1];
-                            break;
-                        case FROZEN:
-                            temp = extractNode(node, frozenHead, frozenTail);
-                            frozenHead = temp[0];
-                            frozenTail = temp[1];
-                    }
-                    validateStateMaintained();
-                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + o.getId() + " cleaned from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
                     masterLock.unlock();
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -271,13 +251,18 @@ public class OverflowShelf extends Shelf {
         }
     }
 
-    private void removeOrderHelper(Temperature temperature, int pos, UUID id) {
+    private void removeOrderHelper(UUID id) {
         lock.lock();
-        cells[pos] = null;
         DoublyLinkedNode node = locations.remove(id);
-        availableCells.offer(pos);
+        if (node == null) throw new DataIntegrityViolation("wrong");
+        Order o = cells[node.value()];
+        if (o == null) throw new DataIntegrityViolation("incorrect");
+
+        cells[node.value()] = null;
+
+        availableCells.offer(node.value());
         DoublyLinkedNode[] temp;
-        switch (temperature) {
+        switch (o.getTemp()) {
             case HOT:
                 temp = extractNode(node, hotHead, hotTail);
                 hotHead = temp[0];
