@@ -2,7 +2,7 @@ package com.proj.ckitchens.svc.operations;
 
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
-import com.proj.ckitchens.model.Shelf;
+import com.proj.ckitchens.model.TemperatureShelf;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +16,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 
-public class ShelfServiceTest {
+public class TemperatureShelfServiceTest {
     private final static ReentrantLock lock = mock(ReentrantLock.class);
-    private Shelf hshelf;
+    private TemperatureShelf hshelf;
     private ShelfService service;
 
     @BeforeAll
@@ -32,7 +32,7 @@ public class ShelfServiceTest {
 
     @BeforeEach
     public void init() {
-        hshelf = new Shelf(lock, 3, Temperature.HOT.name());
+        hshelf = new TemperatureShelf(lock, 3, Temperature.HOT.name());
         service = new ShelfService(hshelf);
     }
 

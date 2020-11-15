@@ -47,7 +47,7 @@ public class OverflowShelfService {
 //                        frozenTail = temp[1];
 //                }
                 validateStateMaintained();
-                ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on " + shelf.getName() + " shelf at pos: "+ freePos + ", temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                 return true;
             }
             return false;
@@ -99,7 +99,7 @@ public class OverflowShelfService {
         validateStateMaintained();
         removeOrderHelper(id);
         validateStateMaintained();
-        ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from overflow shelf to " + o.getTemp() + " shelf", OverflowShelf.class.getSimpleName());
+        ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from " + shelf.getName() + " shelf to " + o.getTemp() + " shelf", shelf.getClass().getSimpleName());
         try {
             return o;
         } finally {
@@ -125,7 +125,7 @@ public class OverflowShelfService {
             validateStateMaintained();
             removeOrderHelper(o.getId());
             validateStateMaintained();
-            ShelfMgmtSystem.readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from overflow shelf; temp: " + o.getTemp(), OverflowShelf.class.getSimpleName());
+            ShelfMgmtSystem.readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from " + shelf.getName() + " shelf; temp: " + o.getTemp(), shelf.getClass().getSimpleName());
             return o;
         } finally {
             masterLock.unlock();
@@ -145,7 +145,7 @@ public class OverflowShelfService {
         // not arrived, discarded, cleaned, moved
         DoublyLinkedNode node = shelf.getLocations().get(order.getId());
 //        if (node == null) throw new DataIntegrityViolation("not correct");
-        System.out.println(" node not found on overflow shelf");
+        System.out.println(" node not found on " + shelf.getName() + " shelf");
         try {
             masterLock.lock();
             if (node != null) {
@@ -153,9 +153,9 @@ public class OverflowShelfService {
                 removeOrderHelper(order.getId());
                 validateStateMaintained();
 //                if(pastDueTime) {
-//                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+//                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
 //                } else {
-                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
 //                }
                 return true;
             }
@@ -180,7 +180,7 @@ public class OverflowShelfService {
                     validateStateMaintained();
                     masterLock.lock();
                     removeOrderHelper(order.getId());
-                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from overflow shelf; temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                     validateStateMaintained();
                     masterLock.unlock();
                 }
@@ -201,7 +201,7 @@ public class OverflowShelfService {
         for (int pos = 0; pos < shelf.getCapacity(); pos++) {
             Order o = shelf.getCells()[pos];
             if (o != null) {
-                System.out.println("Overflow shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(2) + ", pos: " + pos + ", temp:" + o.getTemp());
+                System.out.println(shelf.getName() + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(2) + ", pos: " + pos + ", temp:" + o.getTemp());
             }
         }
         masterLock.unlock();

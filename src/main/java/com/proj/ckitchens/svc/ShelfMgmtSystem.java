@@ -3,7 +3,7 @@ package com.proj.ckitchens.svc;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.OverflowShelf;
-import com.proj.ckitchens.model.Shelf;
+import com.proj.ckitchens.model.TemperatureShelf;
 import com.proj.ckitchens.svc.operations.OverflowShelfService;
 import com.proj.ckitchens.svc.operations.ShelfService;
 
@@ -22,10 +22,10 @@ public class ShelfMgmtSystem {
     private static final Lock frozen = new ReentrantLock(true);
     private static final Lock overflow = new ReentrantLock(true);
     public static  Lock masterLock = new ReentrantLock(true);
-    private static final ShelfService SHELF_H = new ShelfService(new Shelf(hot, 10, Temperature.HOT.name()));
-    private static final ShelfService SHELF_C = new ShelfService(new Shelf(cold, 10, Temperature.COLD.name()));
-    private static final ShelfService SHELF_F = new ShelfService(new Shelf(frozen, 10, Temperature.FROZEN.name()));
-    private static final OverflowShelfService SHELF_O = new OverflowShelfService(new OverflowShelf(overflow, 20));
+    private static final ShelfService SHELF_H = new ShelfService(new TemperatureShelf(hot, 10, Temperature.HOT.name()));
+    private static final ShelfService SHELF_C = new ShelfService(new TemperatureShelf(cold, 10, Temperature.COLD.name()));
+    private static final ShelfService SHELF_F = new ShelfService(new TemperatureShelf(frozen, 10, Temperature.FROZEN.name()));
+    private static final OverflowShelfService SHELF_O = new OverflowShelfService(new OverflowShelf(overflow, 20, "Overflow"));
 
     /**
      * entry point for placing order on shelves
