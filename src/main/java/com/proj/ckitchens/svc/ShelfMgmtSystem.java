@@ -19,7 +19,7 @@ public class ShelfMgmtSystem {
     private static final Lock cold = new ReentrantLock(true);
     private static final Lock frozen = new ReentrantLock(true);
     private static final Lock overflow = new ReentrantLock(true);
-    public static final Lock masterLock = new ReentrantLock(true);
+    public static  Lock masterLock = new ReentrantLock(true);
     private static final Shelf SHELF_H = new Shelf(hot, 10, Temperature.HOT);
     private static final Shelf SHELF_C = new Shelf(cold, 10, Temperature.COLD);
     private static final Shelf SHELF_F = new Shelf(frozen, 10, Temperature.FROZEN);

@@ -44,23 +44,24 @@ public class OverflowShelf extends Shelf {
                 int freePos = availableCells.poll();
                 cells[freePos] = order;
                 DoublyLinkedNode curr = new DoublyLinkedNode(freePos);
-                DoublyLinkedNode[] temp;
-                switch(order.getTemp()) {
-                    case HOT:
-                        temp = putOrderOnOverflowHelper(order, hotHead, hotTail, curr);
-                        hotHead = temp[0];
-                        hotTail = temp[1];
-                        break;
-                    case COLD:
-                        temp = putOrderOnOverflowHelper(order, coldHead, coldTail, curr);
-                        coldHead = temp[0];
-                        coldTail = temp[1];
-                        break;
-                    case FROZEN:
-                        temp = putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
-                        frozenHead = temp[0];
-                        frozenTail = temp[1];
-                }
+                putOrderOnOverflowHelper(order, curr);
+//                DoublyLinkedNode[] temp;
+//                switch(order.getTemp()) {
+//                    case HOT:
+//                        temp = putOrderOnOverflowHelper(order, hotHead, hotTail, curr);
+//                        hotHead = temp[0];
+//                        hotTail = temp[1];
+//                        break;
+//                    case COLD:
+//                        temp = putOrderOnOverflowHelper(order, coldHead, coldTail, curr);
+//                        coldHead = temp[0];
+//                        coldTail = temp[1];
+//                        break;
+//                    case FROZEN:
+//                        temp = putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
+//                        frozenHead = temp[0];
+//                        frozenTail = temp[1];
+//                }
                 validateStateMaintained();
                 ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on overflow shelf at pos: "+ freePos + ", temp: " + order.getTemp(), OverflowShelf.class.getSimpleName());
                 return true;
@@ -286,21 +287,50 @@ public class OverflowShelf extends Shelf {
         lock.unlock();
     }
 
-    private DoublyLinkedNode[] putOrderOnOverflowHelper(Order o, DoublyLinkedNode h, DoublyLinkedNode t, DoublyLinkedNode curr) {
+    private /*DoublyLinkedNode[]*/ void putOrderOnOverflowHelper(Order o, DoublyLinkedNode curr) {
         lock.lock();
-        DoublyLinkedNode[] temp = new DoublyLinkedNode[] {h, t};
+        DoublyLinkedNode h = null;
+        DoublyLinkedNode t = null;
+        switch (o.getTemp()) {
+            case HOT:
+                h = hotHead;
+                t = hotTail;
+                break;
+            case COLD:
+                h = coldHead;
+                t = coldTail;
+                break;
+            case FROZEN:
+                h = frozenHead;
+                t = frozenTail;
+        }
+
+//        DoublyLinkedNode[] temp = new DoublyLinkedNode[] {h, t};
         try {
             if (t == null) {
-                temp[0] = curr;
-                temp[1] = curr;
+                h = curr;
+                t = curr;
             } else {
                 t.setNext(curr);
                 curr.setPrevious(t);
-                temp[1] = curr;
+                t = curr;
+            }
+            switch (o.getTemp()) {
+                case HOT:
+                    hotHead = h;
+                    hotTail = t;
+                    break;
+                case COLD:
+                    coldHead = h;
+                    coldTail = t;
+                    break;
+                case FROZEN:
+                    frozenHead = h;
+                    frozenTail = t;
             }
             locations.put(o.getId(), curr);
             o.setPlacementTime();
-            return temp;
+//            return temp;
         } finally {
             lock.unlock();
         }
@@ -380,5 +410,23 @@ public class OverflowShelf extends Shelf {
         } finally {
             lock.unlock();
         }
+    }
+
+    //testing purpose
+    public Order[] getCells() {
+        return cells;
+    }
+    public Map<UUID, DoublyLinkedNode> getLocations() {
+        return locations;
+    }
+    public Queue<Integer> getAvailableCells() {
+        return availableCells;
+    }
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public DoublyLinkedNode[] getHeadsTails() {
+        return new DoublyLinkedNode[] {hotHead, hotTail, coldHead, coldTail, frozenHead, frozenTail};
     }
 }
