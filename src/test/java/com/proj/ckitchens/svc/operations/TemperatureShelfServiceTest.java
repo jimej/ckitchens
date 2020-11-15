@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 public class TemperatureShelfServiceTest {
     private final static ReentrantLock lock = mock(ReentrantLock.class);
     private TemperatureShelf hshelf;
-    private ShelfService service;
+    private TemperatureShelfService service;
 
     @BeforeAll
     public static void setup() {
@@ -33,7 +33,7 @@ public class TemperatureShelfServiceTest {
     @BeforeEach
     public void init() {
         hshelf = new TemperatureShelf(lock, 3, Temperature.HOT.name());
-        service = new ShelfService(hshelf);
+        service = new TemperatureShelfService(hshelf);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TemperatureShelfServiceTest {
     }
 
     /**
-     * in the process, also test {@link ShelfService#isCellAvailable()}, {@link ShelfService#placeOnShelf(Order)}
+     * in the process, also test {@link TemperatureShelfService#isCellAvailable()}, {@link TemperatureShelfService#placeOnShelf(Order)}
      */
     @Test
     public void testRemoveForDelivery() {

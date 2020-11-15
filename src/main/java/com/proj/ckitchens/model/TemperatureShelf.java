@@ -3,7 +3,7 @@ package com.proj.ckitchens.model;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 
-public class TemperatureShelf extends Shelf {
+public class TemperatureShelf extends ShelfParent {
 //    private final Lock lock;
 //    private final int capacity;
 //    private final Order[] cells;
