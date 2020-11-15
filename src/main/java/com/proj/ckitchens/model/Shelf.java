@@ -4,7 +4,6 @@ import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
 
-import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 
@@ -14,14 +13,14 @@ public class Shelf {
     private final Lock lock;
     private final int capacity;
     private final Order[] cells;
-    private final Temperature temperature;
+    private final String name;
     private final Queue<Integer> availableCells = new LinkedList<>();
     private final Map<UUID, Integer> locations;
-    public Shelf(Lock lock, int capacity, Temperature temperature) {
+    public Shelf(Lock lock, int capacity, String name) {
         this.lock = lock;
         this.capacity = capacity;
         this.cells = new Order[capacity];
-        this.temperature = temperature;
+        this.name = name;
         for(int i = 0; i < capacity; i++) {
             availableCells.offer(i);
         }
@@ -46,9 +45,9 @@ public class Shelf {
                 validateStateMaintained();
                 if(!order.isMoved()) {
                     order.setPlacementTime();
-                    ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + name + " shelf", Shelf.class.getSimpleName());
                 } else {
-                    ShelfMgmtSystem.readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + temperature + " shelf", Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + name + " shelf", Shelf.class.getSimpleName());
                 }
                 return true;
             }
@@ -83,7 +82,7 @@ public class Shelf {
 //            if(pastDueTime) {
 //                ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + id + " at " + pos + " cleaned from " + temperature + " shelf", Shelf.class.getSimpleName());
 //            } else {
-                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + temperature + " shelf", Shelf.class.getSimpleName());
+                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + id + " picked up at " + pos + " from " + name + " shelf", Shelf.class.getSimpleName());
 //            }
             validateStateMaintained();
         } else {
@@ -105,7 +104,7 @@ public class Shelf {
                     validateStateMaintained();
                     masterLock.lock();
                     removeOrderHelper(order.getId());
-                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + temperature + " shelf; temp: " + order.getTemp(), Shelf.class.getSimpleName());
+                    ShelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + name + " shelf; temp: " + order.getTemp(), Shelf.class.getSimpleName());
                     validateStateMaintained();
                     masterLock.unlock();
                 }
@@ -139,7 +138,7 @@ public class Shelf {
         for (int pos = 0; pos < capacity; pos++) {
             Order o = cells[pos];
             if (o != null) {
-                System.out.println(this.temperature + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
+                System.out.println(this.name + " shelf - order id: " + o.getId() + ", value: " + o.computeRemainingLifeValue(1) + ", pos: " + pos + ", temp:" + o.getTemp());
             }
         }
         masterLock.unlock();
@@ -161,7 +160,7 @@ public class Shelf {
                 Map.Entry<UUID, Integer> a = it.next();
                 UUID id = a.getKey();
                 int pos = a.getValue();
-                assert cells[pos].getId() == id && cells[pos].getTemp() == this.temperature;
+                assert cells[pos].getId() == id && cells[pos].getTemp().name() == this.name;
             }
             Iterator<Integer> listIt = availableCells.iterator();
             while (listIt.hasNext()) {
@@ -175,5 +174,25 @@ public class Shelf {
          finally {
             lock.unlock();
         }
+    }
+
+    public Lock getLock() {
+        return this.lock;
+    }
+    public Order[] getCells() {
+        return cells;
+    }
+    public Map<UUID, Integer> getLocations() {
+        return locations;
+    }
+    public Queue<Integer> getAvailableCells() {
+        return availableCells;
+    }
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public String getName() {
+        return this.name;
     }
 }
