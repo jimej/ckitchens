@@ -77,9 +77,9 @@ public class Shelf extends ShelfParent /*extends Shelf*/ {
         frozenHead = h;
         frozenTail = t;
     }
-    public DoublyLinkedNode[] getHeadsTails() {
-        return new DoublyLinkedNode[] {hotHead, hotTail, coldHead, coldTail, frozenHead, frozenTail};
-    }
+//    public DoublyLinkedNode[] getHeadsTails() {
+//        return new DoublyLinkedNode[] {hotHead, hotTail, coldHead, coldTail, frozenHead, frozenTail};
+//    }
 //    public String getName() {
 //        return this.name;
 //    }

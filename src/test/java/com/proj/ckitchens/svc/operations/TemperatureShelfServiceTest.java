@@ -62,7 +62,7 @@ public class TemperatureShelfServiceTest {
         assertStateMaintained();
     }
 
-    @Test
+    @Test //not added to ShelfService yet
     public void testPlaceWrongTemperature() {
         Order o = new Order(UUID.randomUUID(), Temperature.COLD, "Pizza", 200, 0.25);
         assertFalse(service.placeOnShelf(o));;

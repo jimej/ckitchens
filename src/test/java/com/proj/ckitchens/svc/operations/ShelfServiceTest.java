@@ -14,14 +14,15 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class ShelfServiceTest {
     private final static ReentrantLock lock = mock(ReentrantLock.class);
-//    private final static ReentrantLock overflowLock = mock(ReentrantLock.class);
+    private final static ReentrantLock overflowLock = mock(ReentrantLock.class);
     private Shelf hshelf;
-//    private Shelf overflowShelf;
+    private Shelf cshelf;
+    private Shelf fshelf;
+    private Shelf overflowShelf;
     private ShelfService service;
 
     private Order[] cells;
@@ -37,52 +38,57 @@ public class ShelfServiceTest {
         doNothing().when(masterLock).unlock();
         doNothing().when(lock).lock();
         doNothing().when(lock).unlock();
-//        doNothing().when(overflowLock).unlock();
-//        doNothing().when(overflowLock).unlock();
+        doNothing().when(overflowLock).unlock();
+        doNothing().when(overflowLock).unlock();
     }
 
     @BeforeEach
     public void init() {
         hshelf = new Shelf(lock, 3, Temperature.HOT.name());
-//        overflowShelf = new Shelf(lock, 3, "Overflow");
-        service = new ShelfService(hshelf);
+        cshelf = mock(Shelf.class);
+        fshelf = mock(Shelf.class);
+        overflowShelf = mock(Shelf.class);
+        overflowShelf = new Shelf(lock, 3, "Overflow");
+        service = new ShelfService(hshelf, cshelf, fshelf, overflowShelf);
     }
 
+    //The following tests are for all types of shelves, even though only tested for hot shelf - since other
+    //shelves use the same code
     @Test
     public void testPlaceOnShelf() {
-        assertStateMaintained();
-        Order o = generateOneOrder();
-        boolean placed = service.placeOnShelf(o);
+        assertStateMaintained(hshelf);
+        Order o = generateOneHotOrder();
+        boolean placed = service.placeOnShelf(o, hshelf);
         assertTrue(placed);
         assertEquals(o.getId(), hshelf.getCells()[0].getId());
         assertEquals(1, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
 
-        o = generateOneOrder();
-        assertTrue(service.placeOnShelf(o));
+        o = generateOneHotOrder();
+        assertTrue(service.placeOnShelf(o, hshelf));
         assertEquals(2, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
 
-        o = generateOneOrder();
-        assertTrue(service.placeOnShelf(o));
+        o = generateOneHotOrder();
+        assertTrue(service.placeOnShelf(o, hshelf));
         assertEquals(3, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
 
-        o = generateOneOrder();
-        assertFalse(service.placeOnShelf(o));
+        o = generateOneHotOrder();
+        assertFalse(service.placeOnShelf(o, hshelf));
         assertEquals(3, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
     }
 
     @Test
     public void testIsCellAvailable() {
-        assertTrue(service.isCellAvailable());
-        service.placeOnShelf(generateOneOrder());
-        assertTrue(service.isCellAvailable());
-        service.placeOnShelf(generateOneOrder());
-        assertTrue(service.isCellAvailable());
-        service.placeOnShelf(generateOneOrder());
-        assertFalse(service.isCellAvailable());
+        assertTrue(service.isCellAvailable(hshelf));
+        service.placeOnShelf(generateOneHotOrder(), hshelf);
+        assertTrue(service.isCellAvailable(hshelf));
+        service.placeOnShelf(generateOneHotOrder(), hshelf);
+        assertTrue(service.isCellAvailable(hshelf));
+        service.placeOnShelf(generateOneHotOrder(), hshelf);
+        assertFalse(service.isCellAvailable(hshelf));
     }
 
     /**
@@ -90,50 +96,50 @@ public class ShelfServiceTest {
      */
     @Test
     public void testRemoveForDelivery() {
-        Order o1 = generateOneOrder();
-        Order o2 = generateOneOrder();
-        Order o3 = generateOneOrder();
-        service.placeOnShelf(o1);
-        service.placeOnShelf(o2);
-        service.placeOnShelf(o3);
+        Order o1 = generateOneHotOrder();
+        Order o2 = generateOneHotOrder();
+        Order o3 = generateOneHotOrder();
+        service.placeOnShelf(o1, hshelf);
+        service.placeOnShelf(o2, hshelf);
+        service.placeOnShelf(o3, hshelf);
 
         //remove first one
-        service.removeForDelivery(o1);
+        service.removeForDelivery(o1, hshelf);
         assertTrue(hshelf.getCells()[0] == null);
-        assertTrue(service.isCellAvailable());
-        assertStateMaintained();
+        assertTrue(service.isCellAvailable(hshelf));
+        assertStateMaintained(hshelf);
 
-        o1 = generateOneOrder();
-        service.placeOnShelf(o1);
-        assertFalse(service.isCellAvailable());
-        assertStateMaintained();
+        o1 = generateOneHotOrder();
+        service.placeOnShelf(o1, hshelf);
+        assertFalse(service.isCellAvailable(hshelf));
+        assertStateMaintained(hshelf);
 
         //remove last one
-        service.removeForDelivery(o3);
+        service.removeForDelivery(o3, hshelf);
         assertTrue(hshelf.getCells()[2] == null);
-        assertTrue(service.isCellAvailable());
-        assertStateMaintained();
+        assertTrue(service.isCellAvailable(hshelf));
+        assertStateMaintained(hshelf);
 
-        o3 = generateOneOrder();
-        service.placeOnShelf(o3);
-        assertFalse(service.isCellAvailable());
-        assertStateMaintained();
+        o3 = generateOneHotOrder();
+        service.placeOnShelf(o3, hshelf);
+        assertFalse(service.isCellAvailable(hshelf));
+        assertStateMaintained(hshelf);
 
         //remove middle one
-        service.removeForDelivery(o2);
+        service.removeForDelivery(o2, hshelf);
         assertTrue(hshelf.getCells()[1] == null);
-        assertTrue(service.isCellAvailable());
+        assertTrue(service.isCellAvailable(hshelf));
         assertEquals(2, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
 
         //remove until empty
-        service.removeForDelivery(o1);
+        service.removeForDelivery(o1, hshelf);
         assertEquals(1, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
 
-        service.removeForDelivery(o3);
+        service.removeForDelivery(o3, hshelf);
         assertEquals(0, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
     }
 
     @Test
@@ -141,25 +147,107 @@ public class ShelfServiceTest {
         Order o1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 2, Math.random());
         Order o2 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 10, Math.random());
         Order o3 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 10, 0.01);
-        service.placeOnShelf(o1);
-        service.placeOnShelf(o2);
-        service.placeOnShelf(o3);
-        service.removeForDelivery(o2);
+        service.placeOnShelf(o1, hshelf);
+        service.placeOnShelf(o2, hshelf);
+        service.placeOnShelf(o3, hshelf);
+        service.removeForDelivery(o2, hshelf);
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {}
-        service.cleanup();
+        service.cleanup(hshelf);
         assertTrue(hshelf.getCells()[0] == null);
         assertEquals(1, hshelf.getLocations().size());
-        assertStateMaintained();
+        assertStateMaintained(hshelf);
     }
 
-    private void assertStateMaintained(/*Shelf hshelf*/) {
+    //the following tests are for methods called only on overflow shelf
+    @Test
+    public void testDiscardRandom() {
+        service.placeOnShelf(generateOneOrder(Temperature.HOT), overflowShelf);
+        Order o = service.discardRandom(overflowShelf);
+        assertTrue(o == null);
+        assertStateMaintained(overflowShelf);
+
+
+        service.placeOnShelf(generateOneOrder(Temperature.FROZEN), overflowShelf);
+        o = service.discardRandom(overflowShelf);
+        assertTrue(o == null);
+        assertStateMaintained(overflowShelf);
+
+        service.placeOnShelf(generateOneOrder(Temperature.HOT), overflowShelf);
+        o = service.discardRandom(overflowShelf);
+        assertTrue(o != null);
+        assertTrue(overflowShelf.getLocations().size() == 2);
+        assertStateMaintained(overflowShelf);
+
+    }
+
+    @Test
+    public void testRemoveBasedOnTemperature() {
+        service.placeOnShelf(generateOneOrder(Temperature.COLD), overflowShelf);
+        service.placeOnShelf(generateOneOrder(Temperature.FROZEN), overflowShelf);
+        Order o = service.removeBasedOnTemperature(Temperature.COLD, overflowShelf);
+        assertTrue(o.getTemp() == Temperature.COLD);
+        assertTrue(overflowShelf.getLocations().size() == 1);
+        assertStateMaintained(overflowShelf);
+
+        o = service.removeBasedOnTemperature(Temperature.FROZEN, overflowShelf);
+        assertTrue(o.getTemp() == Temperature.FROZEN);
+        assertTrue(overflowShelf.getLocations().size() == 0);
+        assertStateMaintained(overflowShelf);
+    }
+
+    @Test()
+    public void testRemoveNonExistingTemperature() {
+        service.placeOnShelf(generateOneOrder(Temperature.COLD), overflowShelf);
+        service.placeOnShelf(generateOneOrder(Temperature.FROZEN), overflowShelf);
+        assertThrows(NullPointerException.class, () -> service.removeBasedOnTemperature(Temperature.HOT, overflowShelf));
+        assertStateMaintained(overflowShelf);
+    }
+
+    @Test
+    public void testHashOnShelf() {
+        Order o = generateOneOrder(Temperature.HOT);
+        service.placeOnShelf(o, overflowShelf);
+        assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.COLD, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.FROZEN, overflowShelf));
+        assertStateMaintained(overflowShelf);
+
+        o = generateOneOrder(Temperature.COLD);
+        service.placeOnShelf(o, overflowShelf);
+        assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
+        assertTrue(service.hasOnShelf(Temperature.COLD, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.FROZEN, overflowShelf));
+        assertStateMaintained(overflowShelf);
+
+        o = generateOneOrder(Temperature.FROZEN);
+        service.placeOnShelf(o, overflowShelf);
+        assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
+        assertTrue(service.hasOnShelf(Temperature.COLD, overflowShelf));
+        assertTrue(service.hasOnShelf(Temperature.FROZEN, overflowShelf));
+        assertStateMaintained(overflowShelf);
+
+        service.removeBasedOnTemperature(Temperature.COLD, overflowShelf);
+        assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.COLD, overflowShelf));
+        assertTrue(service.hasOnShelf(Temperature.FROZEN, overflowShelf));
+        assertStateMaintained(overflowShelf);
+
+        service.removeForDelivery(o, overflowShelf);
+        assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.COLD, overflowShelf));
+        assertFalse(service.hasOnShelf(Temperature.FROZEN, overflowShelf));
+        assertStateMaintained(overflowShelf);
+    }
+
+
+    private void assertStateMaintained(Shelf shelf) {
         try {
-            cells = hshelf.getCells();
-            locations = hshelf.getLocations();
-            availableCells = hshelf.getAvailableCells();
-            capacity = hshelf.getCapacity();
+            cells = shelf.getCells();
+            locations = shelf.getLocations();
+            availableCells = shelf.getAvailableCells();
+            capacity = shelf.getCapacity();
 //            hotHead = hshelf.getHeadsTails()[0];
 //            hotTail = hshelf.getHeadsTails()[1];
 //            coldHead = hshelf.getHeadsTails()[2];
@@ -167,12 +255,12 @@ public class ShelfServiceTest {
 //            frozenHead = hshelf.getHeadsTails()[4];
 //            frozenTail = hshelf.getHeadsTails()[5];
 
-            hotHead = hshelf.getHotHead();
-            hotTail = hshelf.getHotTail();
-            coldHead = hshelf.getColdHead();
-            coldTail = hshelf.getColdTail();
-            frozenHead = hshelf.getFrozenHead();
-            frozenTail = hshelf.getFrozenTail();
+            hotHead = shelf.getHotHead();
+            hotTail = shelf.getHotTail();
+            coldHead = shelf.getColdHead();
+            coldTail = shelf.getColdTail();
+            frozenHead = shelf.getFrozenHead();
+            frozenTail = shelf.getFrozenTail();
 
             Iterator<Map.Entry<UUID, DoublyLinkedNode>> it = locations.entrySet().iterator();
             while (it.hasNext()) {
@@ -244,8 +332,12 @@ public class ShelfServiceTest {
         }
     }
 
-    private Order generateOneOrder() {
-        return new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", new Random().nextInt(300), Math.random());
+    private Order generateOneHotOrder() {
+        return generateOneOrder(Temperature.HOT);
+    }
+
+    private Order generateOneOrder(Temperature t) {
+        return new Order(UUID.randomUUID(), t, "Pizza", new Random().nextInt(300), Math.random());
     }
 
 }

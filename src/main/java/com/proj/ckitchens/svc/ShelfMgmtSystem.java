@@ -19,11 +19,17 @@ public class ShelfMgmtSystem {
     private static final Lock cold = new ReentrantLock(true);
     private static final Lock frozen = new ReentrantLock(true);
     private static final Lock overflow = new ReentrantLock(true);
+    private static final Shelf hotShelf = new Shelf(hot, 10, Temperature.HOT.name());
+    private static final Shelf coldShelf = new Shelf(cold, 10, Temperature.COLD.name());
+    private static final Shelf frozenShelf = new Shelf(frozen, 10, Temperature.FROZEN.name());
+    private static final Shelf overflowShelf = new Shelf(overflow, 20, "Overflow");
+    private static final ShelfService shelfService =  new ShelfService(hotShelf, coldShelf, frozenShelf, overflowShelf);
     public static  Lock masterLock = new ReentrantLock(true);
-    private static final ShelfService SHELF_H = new ShelfService(new Shelf(hot, 10, Temperature.HOT.name()));
-    private static final ShelfService SHELF_C = new ShelfService(new Shelf(cold, 10, Temperature.COLD.name()));
-    private static final ShelfService SHELF_F = new ShelfService(new Shelf(frozen, 10, Temperature.FROZEN.name()));
-    private static final ShelfService SHELF_O = new ShelfService(new Shelf(overflow, 20, "Overflow"));
+
+//    private static final ShelfService SHELF_H = new ShelfService();
+//    private static final ShelfService SHELF_C = new ShelfService();
+//    private static final ShelfService SHELF_F = new ShelfService();
+//    private static final ShelfService SHELF_O = new ShelfService();
 
     /**
      * entry point for placing order on shelves
@@ -32,17 +38,17 @@ public class ShelfMgmtSystem {
     public static void placeOrderOnShelf(Order order) {
         switch (order.getTemp()) {
             case HOT:
-                if (!SHELF_H.placeOnShelf(order)) {
+                if (!shelfService.placeOnShelf(order, hotShelf)) {
                     placeOrderOnOverflow(order);
                 }
                 break;
             case COLD:
-                if (!SHELF_C.placeOnShelf(order)) {
+                if (!shelfService.placeOnShelf(order, coldShelf)) {
                     placeOrderOnOverflow(order);
                 }
                 break;
             case FROZEN:
-                if (!SHELF_F.placeOnShelf(order)) {
+                if (!shelfService.placeOnShelf(order, frozenShelf)) {
                     placeOrderOnOverflow(order);
                 }
         }
@@ -58,10 +64,10 @@ public class ShelfMgmtSystem {
         masterLock.lock();
         System.out.println(LocalTime.now()  + " | " + triggerEvent + " [" + className +"] ");
         System.out.println("=============================");
-        SHELF_O.readContentOnShelf();
-        SHELF_H.readContentOnShelf();
-        SHELF_C.readContentOnShelf();
-        SHELF_F.readContentOnShelf();
+        shelfService.readContentOnShelf(overflowShelf);
+        shelfService.readContentOnShelf(hotShelf);
+        shelfService.readContentOnShelf(coldShelf);
+        shelfService.readContentOnShelf(frozenShelf);
         masterLock.unlock();
     }
 
@@ -70,10 +76,10 @@ public class ShelfMgmtSystem {
      * called periodically by {@link CleanupService} to discard orders
      */
     public static void cleanupOrdersEndOfLife() {
-        SHELF_O.cleanup();
-        SHELF_H.cleanup();
-        SHELF_C.cleanup();
-        SHELF_F.cleanup();
+        shelfService.cleanup(overflowShelf);
+        shelfService.cleanup(hotShelf);
+        shelfService.cleanup(coldShelf);
+        shelfService.cleanup(frozenShelf);
     }
 
     /**
@@ -83,16 +89,16 @@ public class ShelfMgmtSystem {
      * @param order
      */
     public static void deliverOrder(Order order) {
-        if (!SHELF_O.removeForDelivery(order)) {
+        if (!shelfService.removeForDelivery(order, overflowShelf)) {
             switch (order.getTemp()) {
                 case HOT:
-                    SHELF_H.removeForDelivery(order); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
+                    shelfService.removeForDelivery(order, hotShelf); //should lock both? if the order is just to be placed; can't be placed on HOT shelf anyway
                     break;
                 case COLD:
-                    SHELF_C.removeForDelivery(order);
+                    shelfService.removeForDelivery(order, coldShelf);
                     break;
                 case FROZEN:
-                    SHELF_F.removeForDelivery(order);
+                    shelfService.removeForDelivery(order, frozenShelf);
             }
         }
     }
@@ -107,8 +113,8 @@ public class ShelfMgmtSystem {
         try {
             overflow.lock();
             hot.lock();
-            if (SHELF_O.hasOnShelf(Temperature.HOT) && SHELF_H.isCellAvailable()) {
-                vacateFromOverflow(order, Temperature.HOT, SHELF_H);
+            if (shelfService.hasOnShelf(Temperature.HOT, overflowShelf) && shelfService.isCellAvailable(hotShelf)) {
+                vacateFromOverflow(order, Temperature.HOT, hotShelf);
                 return;
             }
         } finally {
@@ -120,8 +126,8 @@ public class ShelfMgmtSystem {
             overflow.lock();
             cold.lock();
 
-            if (SHELF_O.hasOnShelf(Temperature.COLD) && SHELF_C.isCellAvailable()) {
-                vacateFromOverflow(order, Temperature.COLD, SHELF_C);
+            if (shelfService.hasOnShelf(Temperature.COLD, overflowShelf) && shelfService.isCellAvailable(coldShelf)) {
+                vacateFromOverflow(order, Temperature.COLD, coldShelf);
                 return;
             }
 
@@ -133,8 +139,8 @@ public class ShelfMgmtSystem {
         try {
             overflow.lock();
             frozen.lock();
-            if (SHELF_O.hasOnShelf(Temperature.FROZEN) && SHELF_F.isCellAvailable()) {
-                vacateFromOverflow(order, Temperature.FROZEN, SHELF_F);
+            if (shelfService.hasOnShelf(Temperature.FROZEN, overflowShelf) && shelfService.isCellAvailable(frozenShelf)) {
+                vacateFromOverflow(order, Temperature.FROZEN, frozenShelf);
                 return;
             }
         } finally {
@@ -143,9 +149,9 @@ public class ShelfMgmtSystem {
         }
 
         overflow.lock();
-        Order discarded = SHELF_O.discardRandom(); //overflow shelf must be full at this point.
+        Order discarded = shelfService.discardRandom(overflowShelf); //overflow shelf must be full at this point.
         if(discarded != null) {
-            SHELF_O.placeOnShelf(order);
+            shelfService.placeOnShelf(order, overflowShelf);
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after discarding an order on overflow");
         } else { //only happens if overflow has 0 capacity
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is thrown away. REMOVAL - thrown away");
@@ -159,24 +165,24 @@ public class ShelfMgmtSystem {
      */
     private static void placeOrderOnOverflow(Order order) {
         overflow.lock();
-        if (!SHELF_O.placeOnShelf(order)) {
+        if (!shelfService.placeOnShelf(order, overflowShelf)) {
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " not able to place on overflow " + order.getId());
             moveOrderFromOverflow(order);
         }
         overflow.unlock();
     }
 
-    private static void vacateFromOverflow(Order order, Temperature temp, ShelfService shelfService) {
+    private static void vacateFromOverflow(Order order, Temperature temp, Shelf shelf) {
 //        if (SHELF_O.hasOnShelf(temp) && shelf.isCellAvailable()) {
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
-            Order o = SHELF_O.removeBasedOnTemperature(temp);
+            Order o = shelfService.removeBasedOnTemperature(temp, overflowShelf);
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
             o.setLifeAfterMove();
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
-            shelfService.placeOnShelf(o);
+            shelfService.placeOnShelf(o, shelf);
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
-            SHELF_O.placeOnShelf(order);
+            shelfService.placeOnShelf(order, overflowShelf);
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
 //        }
     }
