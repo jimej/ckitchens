@@ -28,7 +28,7 @@ public class ShelfService {
                 int freePos = shelf.getAvailableCells().poll();
                 shelf.getCells()[freePos] = order;
                 DoublyLinkedNode curr = new DoublyLinkedNode(freePos);
-                putOrderOnOverflowHelper(order, curr);
+                putOrderOnShelfHelper(order, curr);
 //                DoublyLinkedNode[] temp;
 //                switch(order.getTemp()) {
 //                    case HOT:
@@ -47,7 +47,13 @@ public class ShelfService {
 //                        frozenTail = temp[1];
 //                }
                 validateStateMaintained();
-                ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on " + shelf.getName() + " shelf at pos: "+ freePos + ", temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                if(!order.isMoved()) {
+                    order.setPlacementTime();
+                    ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
+                } else {
+                    ShelfMgmtSystem.readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
+                }
+//                ShelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on " + shelf.getName() + " shelf at pos: "+ freePos + ", temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                 return true;
             }
             return false;
@@ -92,24 +98,26 @@ public class ShelfService {
     public Order removeBasedOnTemperature(Temperature temp) {
         shelf.getLock().lock();
         int pos = -1;
-        switch (temp) {
-            case HOT:
-                pos = shelf.getHotHead().value();
-                break;
-            case COLD:
-                pos = shelf.getColdHead().value();
-                break;
-            case FROZEN:
-                pos = shelf.getFrozenHead().value();
-        }
-        Order o = shelf.getCells()[pos];
-        UUID id = o.getId();
-        masterLock.lock();
-        validateStateMaintained();
-        removeOrderHelper(id);
-        validateStateMaintained();
-        ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from " + shelf.getName() + " shelf to " + o.getTemp() + " shelf", shelf.getClass().getSimpleName());
         try {
+            masterLock.lock();
+            switch (temp) {
+                case HOT:
+                    pos = shelf.getHotHead().value();
+                    break;
+                case COLD:
+                    pos = shelf.getColdHead().value();
+                    break;
+                case FROZEN:
+                    pos = shelf.getFrozenHead().value();
+            }
+            Order o = shelf.getCells()[pos];
+            UUID id = o.getId();
+
+            validateStateMaintained();
+            removeOrderHelper(id);
+            validateStateMaintained();
+            ShelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from " + shelf.getName() + " shelf at position " + pos+ " to " + o.getTemp() + " shelf", shelf.getClass().getSimpleName());
+
             return o;
         } finally {
             masterLock.unlock();
@@ -124,11 +132,11 @@ public class ShelfService {
      *
      * @return
      */
-    public Order discardRandom() {
+    public Order discardRandom() {//add condition overflowshlf, must be full to discard
         shelf.getLock().lock();
         try {
             masterLock.lock();
-            if (shelf.getCapacity() == 0) return null;
+            if (shelf.getCapacity() == 0 || isCellAvailable()) return null;
             int pos = new Random().nextInt(shelf.getCapacity());
             Order o = shelf.getCells()[pos];
             validateStateMaintained();
@@ -158,13 +166,14 @@ public class ShelfService {
         try {
             masterLock.lock();
             if (node != null) {
+                int pos = shelf.getLocations().get(order.getId()).value();
                 validateStateMaintained();
                 removeOrderHelper(order.getId());
                 validateStateMaintained();
 //                if(pastDueTime) {
 //                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
 //                } else {
-                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                ShelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
 //                }
                 return true;
             }
@@ -184,7 +193,7 @@ public class ShelfService {
             for (int i = 0; i < shelf.getCapacity(); i++) {
                 Order order = shelf.getCells()[i];
                 if (order == null) continue;
-                double lifeValue = order.computeRemainingLifeValue(2);
+                double lifeValue = computeLifeValue(order);
                 if (lifeValue <=0) {
                     validateStateMaintained();
                     masterLock.lock();
@@ -214,6 +223,19 @@ public class ShelfService {
             }
         }
         masterLock.unlock();
+    }
+
+    private double computeLifeValue(Order order) {
+        double lifeValue;
+        if (Temperature.HOT.name().equals(shelf.getName())
+                || Temperature.COLD.name().equals(shelf.getName())
+                || Temperature.FROZEN.name().equals(shelf.getName())
+        ) {
+            lifeValue = order.computeRemainingLifeValue(1);
+        } else {
+            lifeValue = order.computeRemainingLifeValue(2);
+        }
+        return lifeValue;
     }
 
     /**
@@ -283,7 +305,7 @@ public class ShelfService {
         shelf.getLock().unlock();
     }
 
-    private /*DoublyLinkedNode[]*/ void putOrderOnOverflowHelper(Order o, DoublyLinkedNode curr) {
+    private /*DoublyLinkedNode[]*/ void putOrderOnShelfHelper(Order o, DoublyLinkedNode curr) {
         shelf.getLock().lock();
         DoublyLinkedNode h = null;
         DoublyLinkedNode t = null;
