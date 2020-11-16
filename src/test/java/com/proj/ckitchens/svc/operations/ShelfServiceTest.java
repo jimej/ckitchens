@@ -161,6 +161,22 @@ public class ShelfServiceTest {
     }
 
     //the following tests are for methods called only on overflow shelf
+
+    @Test
+    public void testDiscardRandomNotOnOverflowShelf() {
+        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
+    }
+
+    @Test
+    public void testRemoveBasedOnTemperatureNotOnOverflow() {
+        assertThrows(IllegalArgumentException.class, () -> service.removeBasedOnTemperature(Temperature.HOT, hshelf));
+    }
+
+    @Test
+    public void testHasOnShelfOtherThanOverflow() {
+        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
+    }
+
     @Test
     public void testDiscardRandom() {
         service.placeOnShelf(generateOneOrder(Temperature.HOT), overflowShelf);
@@ -206,7 +222,7 @@ public class ShelfServiceTest {
     }
 
     @Test
-    public void testHashOnShelf() {
+    public void testHasOnShelf() {
         Order o = generateOneOrder(Temperature.HOT);
         service.placeOnShelf(o, overflowShelf);
         assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));

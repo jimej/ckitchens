@@ -76,6 +76,9 @@ public class ShelfService {
      * @return
      */
     public boolean hasOnShelf(Temperature temp, Shelf shelf) {
+        if (!isOverflowShelf(shelf)) {
+            throw new IllegalArgumentException("This method can only be called on Overflow shelf");
+        }
         shelf.getLock().lock();
         try {
             return (temp == Temperature.HOT && shelf.getHotTail() != null)
@@ -102,6 +105,9 @@ public class ShelfService {
      * @return
      */
     public Order removeBasedOnTemperature(Temperature temp, Shelf shelf) {
+        if (!isOverflowShelf(shelf)) {
+            throw new IllegalArgumentException("This method can only be called on Overflow shelf");
+        }
         shelf.getLock().lock();
         int pos = -1;
         try {
@@ -138,7 +144,10 @@ public class ShelfService {
      *
      * @return
      */
-    public Order discardRandom(Shelf shelf) {//add condition overflowshlf, must be full to discard
+    public Order discardRandom(Shelf shelf) {
+        if (!isOverflowShelf(shelf)) {
+            throw new IllegalArgumentException("This method can only be called on Overflow shelf");
+        }
         shelf.getLock().lock();
         try {
             masterLock.lock();
@@ -233,15 +242,18 @@ public class ShelfService {
 
     private double computeLifeValue(Order order, Shelf shelf) {
         double lifeValue;
-        if (Temperature.HOT.name().equals(shelf.getName())
-                || Temperature.COLD.name().equals(shelf.getName())
-                || Temperature.FROZEN.name().equals(shelf.getName())
-        ) {
-            lifeValue = order.computeRemainingLifeValue(1);
-        } else {
+        if (isOverflowShelf(shelf)) {
             lifeValue = order.computeRemainingLifeValue(2);
+        } else {
+            lifeValue = order.computeRemainingLifeValue(1);
         }
         return lifeValue;
+    }
+
+    private boolean isOverflowShelf(Shelf shelf) {
+        return !(Temperature.HOT.name().equals(shelf.getName())
+                || Temperature.COLD.name().equals(shelf.getName())
+                || Temperature.FROZEN.name().equals(shelf.getName()));
     }
 
     /**
