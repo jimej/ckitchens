@@ -22,6 +22,12 @@ public class ShelfMgmtSystem {
     private static final Lock cold = new ReentrantLock(true);
     private static final Lock frozen = new ReentrantLock(true);
     private static final Lock overflow = new ReentrantLock(true);
+    private static final ShelfService shelfServiceInstance = new ShelfService(
+            new Shelf(hot, 10, Temperature.HOT.name()),
+            new Shelf(cold, 10, Temperature.COLD.name()),
+            new Shelf(frozen, 10, Temperature.FROZEN.name()),
+            new Shelf(overflow, 15, "Overflow")
+    );
     private final Shelf hotShelf; // = new Shelf(hot, 10, Temperature.HOT.name());
     private final Shelf coldShelf; // = new Shelf(cold, 10, Temperature.COLD.name());
     private final Shelf frozenShelf; // = new Shelf(frozen, 10, Temperature.FROZEN.name());
@@ -33,14 +39,9 @@ public class ShelfMgmtSystem {
 //    private static final ShelfService SHELF_C = new ShelfService();
 //    private static final ShelfService SHELF_F = new ShelfService();
 //    private static final ShelfService SHELF_O = new ShelfService();
-    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem();
-    private ShelfMgmtSystem(/*@Autowired ShelfService shelfService*/) {
-        this.shelfService = new ShelfService(
-                new Shelf(hot, 10, Temperature.HOT.name()),
-                new Shelf(cold, 10, Temperature.COLD.name()),
-                new Shelf(frozen, 10, Temperature.FROZEN.name()),
-                new Shelf(overflow, 15, "Overflow")
-        );
+    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem(shelfServiceInstance);
+    public ShelfMgmtSystem(ShelfService shelfService) {
+        this.shelfService = shelfService;
         hotShelf = shelfService.getHotShelf();
         coldShelf = shelfService.getColdShelf();
         frozenShelf = shelfService.getFrozenShelf();
@@ -126,7 +127,7 @@ public class ShelfMgmtSystem {
      *
      * @param order
      */
-    private void moveOrderFromOverflow(Order order) {
+    public void moveOrderFromOverflow(Order order) {
         try {
             overflow.lock();
             hot.lock();
