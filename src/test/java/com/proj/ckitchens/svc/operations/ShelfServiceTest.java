@@ -92,7 +92,7 @@ public class ShelfServiceTest {
     }
 
     /**
-     * in the process, also test {@link TemperatureShelfService#isCellAvailable()}, {@link TemperatureShelfService#placeOnShelf(Order)}
+     * in the process, also test {@link ShelfService#isCellAvailable(Shelf)}, {@link ShelfService#placeOnShelf(Order, Shelf)}
      */
     @Test
     public void testRemoveForDelivery() {
@@ -163,22 +163,11 @@ public class ShelfServiceTest {
     //the following tests are for methods called only on overflow shelf
 
     @Test
-    public void testDiscardRandomNotOnOverflowShelf() {
-        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
-    }
-
-    @Test
-    public void testRemoveBasedOnTemperatureNotOnOverflow() {
-        assertThrows(IllegalArgumentException.class, () -> service.removeBasedOnTemperature(Temperature.HOT, hshelf));
-    }
-
-    @Test
-    public void testHasOnShelfOtherThanOverflow() {
-        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
-    }
-
-    @Test
     public void testDiscardRandom() {
+        //call on temperature shelf
+        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
+
+        //call on overflow shelf
         service.placeOnShelf(generateOneOrder(Temperature.HOT), overflowShelf);
         Order o = service.discardRandom(overflowShelf);
         assertTrue(o == null);
@@ -200,6 +189,10 @@ public class ShelfServiceTest {
 
     @Test
     public void testRemoveBasedOnTemperature() {
+        //call on temperature shelf
+        assertThrows(IllegalArgumentException.class, () -> service.removeBasedOnTemperature(Temperature.HOT, hshelf));
+
+        //call on overflow shelf
         service.placeOnShelf(generateOneOrder(Temperature.COLD), overflowShelf);
         service.placeOnShelf(generateOneOrder(Temperature.FROZEN), overflowShelf);
         Order o = service.removeBasedOnTemperature(Temperature.COLD, overflowShelf);
@@ -215,6 +208,10 @@ public class ShelfServiceTest {
 
     @Test()
     public void testRemoveNonExistingTemperature() {
+        //call on temperature shelf
+        assertThrows(IllegalArgumentException.class, () -> service.discardRandom(hshelf));
+
+        //call on overflow shelf
         service.placeOnShelf(generateOneOrder(Temperature.COLD), overflowShelf);
         service.placeOnShelf(generateOneOrder(Temperature.FROZEN), overflowShelf);
         assertThrows(NullPointerException.class, () -> service.removeBasedOnTemperature(Temperature.HOT, overflowShelf));
@@ -223,6 +220,10 @@ public class ShelfServiceTest {
 
     @Test
     public void testHasOnShelf() {
+        //call on temperature shelf
+        assertThrows(IllegalArgumentException.class, () -> service.hasOnShelf(Temperature.HOT, hshelf));
+
+        //call on overflow
         Order o = generateOneOrder(Temperature.HOT);
         service.placeOnShelf(o, overflowShelf);
         assertTrue(service.hasOnShelf(Temperature.HOT, overflowShelf));
@@ -264,12 +265,6 @@ public class ShelfServiceTest {
             locations = shelf.getLocations();
             availableCells = shelf.getAvailableCells();
             capacity = shelf.getCapacity();
-//            hotHead = hshelf.getHeadsTails()[0];
-//            hotTail = hshelf.getHeadsTails()[1];
-//            coldHead = hshelf.getHeadsTails()[2];
-//            coldTail = hshelf.getHeadsTails()[3];
-//            frozenHead = hshelf.getHeadsTails()[4];
-//            frozenTail = hshelf.getHeadsTails()[5];
 
             hotHead = shelf.getHotHead();
             hotTail = shelf.getHotTail();

@@ -187,7 +187,12 @@ public class ShelfService {
             if (node != null) {
                 int pos = shelf.getLocations().get(order.getId()).value();
                 validateStateMaintained(shelf);
+                double lifeValue = computeLifeValue(order, shelf);
                 removeOrderHelper(order.getId(), shelf);
+                if(lifeValue <= 0) {
+                    shelfMgmtSystem.readContents("REMOVAL - past due: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                    return true;
+                }
                 validateStateMaintained(shelf);
 //                if(pastDueTime) {
 //                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
