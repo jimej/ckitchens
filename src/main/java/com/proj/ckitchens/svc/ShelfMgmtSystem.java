@@ -4,6 +4,8 @@ import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
 import com.proj.ckitchens.svc.operations.ShelfService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.util.concurrent.locks.Lock;
@@ -14,28 +16,43 @@ import java.util.concurrent.locks.ReentrantLock;
  * This class is the entry point for placing orders on shelves, delivering/discarding orders,
  * moving orders between shelves, cleaning up orders
  */
+@Service
 public class ShelfMgmtSystem {
     private static final Lock hot = new ReentrantLock(true);
     private static final Lock cold = new ReentrantLock(true);
     private static final Lock frozen = new ReentrantLock(true);
     private static final Lock overflow = new ReentrantLock(true);
-    private static final Shelf hotShelf = new Shelf(hot, 10, Temperature.HOT.name());
-    private static final Shelf coldShelf = new Shelf(cold, 10, Temperature.COLD.name());
-    private static final Shelf frozenShelf = new Shelf(frozen, 10, Temperature.FROZEN.name());
-    private static final Shelf overflowShelf = new Shelf(overflow, 20, "Overflow");
-    private static final ShelfService shelfService =  new ShelfService(hotShelf, coldShelf, frozenShelf, overflowShelf);
+    private final Shelf hotShelf; // = new Shelf(hot, 10, Temperature.HOT.name());
+    private final Shelf coldShelf; // = new Shelf(cold, 10, Temperature.COLD.name());
+    private final Shelf frozenShelf; // = new Shelf(frozen, 10, Temperature.FROZEN.name());
+    private final Shelf overflowShelf; // = new Shelf(overflow, 20, "Overflow");
+    private final ShelfService shelfService; // =  new ShelfService(hotShelf, coldShelf, frozenShelf, overflowShelf);
     public static  Lock masterLock = new ReentrantLock(true);
 
 //    private static final ShelfService SHELF_H = new ShelfService();
 //    private static final ShelfService SHELF_C = new ShelfService();
 //    private static final ShelfService SHELF_F = new ShelfService();
 //    private static final ShelfService SHELF_O = new ShelfService();
+    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem();
+    private ShelfMgmtSystem(/*@Autowired ShelfService shelfService*/) {
+        this.shelfService = new ShelfService(
+                new Shelf(hot, 10, Temperature.HOT.name()),
+                new Shelf(cold, 10, Temperature.COLD.name()),
+                new Shelf(frozen, 10, Temperature.FROZEN.name()),
+                new Shelf(overflow, 15, "Overflow")
+        );
+        hotShelf = shelfService.getHotShelf();
+        coldShelf = shelfService.getColdShelf();
+        frozenShelf = shelfService.getFrozenShelf();
+        overflowShelf = shelfService.getOverflowShelf();
+
+    }
 
     /**
      * entry point for placing order on shelves
      * @param order
      */
-    public static void placeOrderOnShelf(Order order) {
+    public void placeOrderOnShelf(Order order) {
         switch (order.getTemp()) {
             case HOT:
                 if (!shelfService.placeOnShelf(order, hotShelf)) {
@@ -60,7 +77,7 @@ public class ShelfMgmtSystem {
      * @param className
      * @param triggerEvent
      */
-    public static void readContents(String triggerEvent, String className) {
+    public void readContents(String triggerEvent, String className) {
         masterLock.lock();
         System.out.println(LocalTime.now()  + " | " + triggerEvent + " [" + className +"] ");
         System.out.println("=============================");
@@ -75,7 +92,7 @@ public class ShelfMgmtSystem {
      * clean up orders that reached end of life
      * called periodically by {@link CleanupService} to discard orders
      */
-    public static void cleanupOrdersEndOfLife() {
+    public void cleanupOrdersEndOfLife() {
         shelfService.cleanup(overflowShelf);
         shelfService.cleanup(hotShelf);
         shelfService.cleanup(coldShelf);
@@ -88,7 +105,7 @@ public class ShelfMgmtSystem {
      * first check if the order is on overflow, then check on a regular shelf
      * @param order
      */
-    public static void deliverOrder(Order order) {
+    public void deliverOrder(Order order) {
         if (!shelfService.removeForDelivery(order, overflowShelf)) {
             switch (order.getTemp()) {
                 case HOT:
@@ -109,7 +126,7 @@ public class ShelfMgmtSystem {
      *
      * @param order
      */
-    private static void moveOrderFromOverflow(Order order) {
+    private void moveOrderFromOverflow(Order order) {
         try {
             overflow.lock();
             hot.lock();
@@ -163,7 +180,7 @@ public class ShelfMgmtSystem {
      * place an order on overflow when a HOT/COLD/FROZEN shelf is full
      * @param order
      */
-    private static void placeOrderOnOverflow(Order order) {
+    private void placeOrderOnOverflow(Order order) {
         overflow.lock();
         if (!shelfService.placeOnShelf(order, overflowShelf)) {
             System.out.println(ShelfMgmtSystem.class.getSimpleName() + " not able to place on overflow " + order.getId());
@@ -172,7 +189,7 @@ public class ShelfMgmtSystem {
         overflow.unlock();
     }
 
-    private static void vacateFromOverflow(Order order, Temperature temp, Shelf shelf) {
+    private void vacateFromOverflow(Order order, Temperature temp, Shelf shelf) {
 //        if (SHELF_O.hasOnShelf(temp) && shelf.isCellAvailable()) {
 //                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
             Order o = shelfService.removeBasedOnTemperature(temp, overflowShelf);
