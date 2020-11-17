@@ -3,20 +3,22 @@ package com.proj.ckitchens.svc;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
+
 
 /**
  * clean up orders from shelves when food value reaches 0 or becomes negative
  */
 public class CleanupService {
     private final ScheduledExecutorService executor;
-    private boolean shutdownSignal;
+    private volatile boolean shutdownSignal;
     public CleanupService() {
         this.executor = Executors.newScheduledThreadPool(2);
         this.shutdownSignal = false;
     }
 
     public void run() {
-        executor.scheduleWithFixedDelay(()->ShelfMgmtSystem.cleanupOrdersEndOfLife(), 30, 10, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(()->shelfMgmtSystem.cleanupOrdersEndOfLife(), 30, 10, TimeUnit.SECONDS);
         while(!shutdownSignal) {
             try {
                 Thread.sleep(5000);

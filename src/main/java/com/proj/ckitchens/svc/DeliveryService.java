@@ -36,7 +36,7 @@ public class DeliveryService {
                 int delay = RandomInt.randomDelay(2, 6); //new Random().nextInt(10) + 10; //20, 60 // 4, 2
                 executor.schedule(
                         () -> {
-                            logger.log(Level.DEBUG, DeliveryService.class.getSimpleName() + "to remove order from shelf {}", o.getId());
+                            logger.log(Level.DEBUG, DeliveryService.class.getSimpleName() + "to remove order {} from shelf", o.getId());
                             shelfMgmtSystem.deliverOrder(o);
                         }, delay, TimeUnit.SECONDS
                 );

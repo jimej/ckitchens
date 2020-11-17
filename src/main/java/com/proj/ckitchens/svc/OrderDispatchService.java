@@ -3,6 +3,9 @@ package com.proj.ckitchens.svc;
 //import com.proj.ckitchens.common.OrderDispatchQueue;
 import com.proj.ckitchens.common.LockedQueue;
 import com.proj.ckitchens.model.Order;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.*;
 
@@ -13,6 +16,9 @@ public class OrderDispatchService {
     private final LinkedBlockingQueue<Order> deliveryQueue;
     private final LinkedBlockingQueue<Order> orders;
     private final ExecutorService executor;
+    private volatile boolean shutdownSignal;
+
+    private static final Logger logger = LogManager.getLogger(OrderDispatchService.class);
     public OrderDispatchService(LinkedBlockingQueue<Order> orders, LinkedBlockingQueue<Order> deliveryQueue) {
         this.orders = orders;
         this.deliveryQueue = deliveryQueue;
@@ -29,7 +35,7 @@ public class OrderDispatchService {
         executor.execute(() ->
                 {
                     deliveryQueue.add(order);
-                    System.out.println(OrderDispatchService.class.getSimpleName() + " order " + order.getId() + " dispatched to delivery queue.");
+                    logger.log(Level.DEBUG, OrderDispatchService.class.getSimpleName() + " order {} dispatched to delivery queue", order.getId());
                 }
         );
 
@@ -44,6 +50,10 @@ public class OrderDispatchService {
 
         Order order;
         try {
+            if(shutdownSignal) {
+                orderFuture.cancel(true);
+                return null;
+            }
             order = orderFuture.get();
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
@@ -52,7 +62,7 @@ public class OrderDispatchService {
         return order;
     }
 
-    public void shutdown() {
-        this.executor.shutdownNow();
+    public void signalShutDown() {
+        this.shutdownSignal = true; this.executor.shutdownNow();
     }
 }

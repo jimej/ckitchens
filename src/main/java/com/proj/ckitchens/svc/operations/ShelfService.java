@@ -6,6 +6,9 @@ import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
 import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
@@ -23,6 +26,7 @@ public class ShelfService {
     private final Shelf coldShelf;
     private final Shelf frozenShelf;
     private final Shelf overflowShelf;
+    private static final Logger logger = LogManager.getLogger(ShelfService.class);
     public ShelfService(Shelf hotShelf, Shelf coldShelf, Shelf frozenShelf, Shelf overflowShelf) {
         this.hotShelf = hotShelf;
         this.coldShelf = coldShelf;
@@ -180,8 +184,11 @@ public class ShelfService {
         // node is null when the order is not on this shelf
         // not arrived, discarded, cleaned, moved
         DoublyLinkedNode node = shelf.getLocations().get(order.getId());
+        if (node == null) {
+            logger.log(Level.DEBUG, "NOT FOUND - {} is not found on shelf {}", order.getId(), shelf.getName());
+        }
 //        if (node == null) throw new DataIntegrityViolation("not correct");
-        System.out.println(" node not found on " + shelf.getName() + " shelf");
+//        System.out.println(" node not found on " + shelf.getName() + " shelf");
         try {
             masterLock.lock();
             if (node != null) {

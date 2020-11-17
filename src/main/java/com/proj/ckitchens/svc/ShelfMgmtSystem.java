@@ -4,6 +4,9 @@ import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
 import com.proj.ckitchens.svc.operations.ShelfService;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +37,10 @@ public class ShelfMgmtSystem {
     private final Shelf overflowShelf; // = new Shelf(overflow, 20, "Overflow");
     private final ShelfService shelfService; // =  new ShelfService(hotShelf, coldShelf, frozenShelf, overflowShelf);
     public static  Lock masterLock = new ReentrantLock(true);
+    private static final Logger logger = LogManager.getLogger(ShelfMgmtSystem.class);
 
-//    private static final ShelfService SHELF_H = new ShelfService();
+
+    //    private static final ShelfService SHELF_H = new ShelfService();
 //    private static final ShelfService SHELF_C = new ShelfService();
 //    private static final ShelfService SHELF_F = new ShelfService();
 //    private static final ShelfService SHELF_O = new ShelfService();
@@ -170,9 +175,9 @@ public class ShelfMgmtSystem {
         Order discarded = shelfService.discardRandom(overflowShelf); //overflow shelf must be full at this point.
         if(discarded != null) {
             shelfService.placeOnShelf(order, overflowShelf);
-            System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after discarding an order on overflow");
+            logger.log(Level.DEBUG,ShelfMgmtSystem.class.getSimpleName() + " order {} is placed on overflow shelf after discarding an order on overflow", order.getId());
         } else { //only happens if overflow has 0 capacity
-            System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is thrown away. REMOVAL - thrown away");
+            logger.log(Level.WARN, ShelfMgmtSystem.class.getSimpleName() + " order {} is thrown away. REMOVAL - thrown away", order.getId());
         }
         overflow.unlock();
     }
@@ -184,7 +189,7 @@ public class ShelfMgmtSystem {
     private void placeOrderOnOverflow(Order order) {
         overflow.lock();
         if (!shelfService.placeOnShelf(order, overflowShelf)) {
-            System.out.println(ShelfMgmtSystem.class.getSimpleName() + " not able to place on overflow " + order.getId());
+            logger.log(Level.DEBUG, ShelfMgmtSystem.class.getSimpleName() + " not able to directly place {} on overflow", order.getId());
             moveOrderFromOverflow(order);
         }
         overflow.unlock();
