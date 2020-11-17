@@ -481,7 +481,7 @@ public class ShelfService {
             }
             assert sum == shelf.getLocations().size();
         }catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         } finally {
             shelf.getLock().unlock();
         }
