@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * order intake and publish to queue
+ * order intake and publish to orders queue
  */
 public class OrderMgmtService {
     private final ExecutorService executor;

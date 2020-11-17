@@ -4,12 +4,10 @@ import com.proj.ckitchens.common.DoublyLinkedNode;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
-import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -19,8 +17,9 @@ import java.util.UUID;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
-
-@Service
+/**
+ * service on a single shelf
+ */
 public class ShelfService {
     private final Shelf hotShelf;
     private final Shelf coldShelf;
@@ -33,6 +32,15 @@ public class ShelfService {
         this.frozenShelf = frozenShelf;
         this.overflowShelf = overflowShelf;;
     }
+
+    /**
+     * place an order on shelf
+     * also check if it's initial placement or an order is moved from overflow
+     * set placement time or move time for life value calculation
+     * @param order
+     * @param shelf
+     * @return true if order is placed on shelf, false otherwise
+     */
     public boolean placeOnShelf(Order order, Shelf shelf) {
         try {
             shelf.getLock().lock();
@@ -43,31 +51,14 @@ public class ShelfService {
                 shelf.getCells()[freePos] = order;
                 DoublyLinkedNode curr = new DoublyLinkedNode(freePos);
                 putOrderOnShelfHelper(order, curr, shelf);
-//                DoublyLinkedNode[] temp;
-//                switch(order.getTemp()) {
-//                    case HOT:
-//                        temp = putOrderOnOverflowHelper(order, hotHead, hotTail, curr);
-//                        hotHead = temp[0];
-//                        hotTail = temp[1];
-//                        break;
-//                    case COLD:
-//                        temp = putOrderOnOverflowHelper(order, coldHead, coldTail, curr);
-//                        coldHead = temp[0];
-//                        coldTail = temp[1];
-//                        break;
-//                    case FROZEN:
-//                        temp = putOrderOnOverflowHelper(order, frozenHead, frozenTail, curr);
-//                        frozenHead = temp[0];
-//                        frozenTail = temp[1];
-//                }
                 validateStateMaintained(shelf);
+
                 if(!order.isMoved()) {
                     order.setPlacementTime();
                     shelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
                 } else {
                     shelfMgmtSystem.readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
                 }
-//                shelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed on " + shelf.getName() + " shelf at pos: "+ freePos + ", temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                 return true;
             }
             return false;
@@ -96,6 +87,12 @@ public class ShelfService {
             shelf.getLock().unlock();
         }
     }
+
+    /**
+     * checks if the shelf has space
+     * @param shelf
+     * @return true if the shelf has space
+     */
     public boolean isCellAvailable(Shelf shelf) {
         shelf.getLock().lock();
         try {
@@ -108,9 +105,10 @@ public class ShelfService {
 
     /**
      * remove an order of certain temperature on overflow to make space for new order placement
-     * It's called only after verifying the order exists and the move to HOT/COLD/FROZEN shelf is allowed
+     * It's called only after verifying the order of the temperature exists and
+     * HOT/COLD/FROZEN shelf has more space
      * @param temp
-     * @return
+     * @return removed order from overflow shelf
      */
     public Order removeBasedOnTemperature(Temperature temp, Shelf shelf) {
         if (!isOverflowShelf(shelf)) {
@@ -150,7 +148,7 @@ public class ShelfService {
      * discard a random order from overflow shelf when overflow is full and moving an order from overflow
      * to regular shelf is not possible.
      *
-     * @return
+     * @return the discarded order from overflow
      */
     public Order discardRandom(Shelf shelf) {
         if (!isOverflowShelf(shelf)) {
@@ -159,7 +157,7 @@ public class ShelfService {
         shelf.getLock().lock();
         try {
             masterLock.lock();
-            if (shelf.getCapacity() == 0 || isCellAvailable(shelf)) return null;
+            if (shelf.getCapacity() == 0 || isCellAvailable(shelf)) return null; //overflow shelf must be full
             int pos = new Random().nextInt(shelf.getCapacity());
             Order o = shelf.getCells()[pos];
             validateStateMaintained(shelf);
@@ -175,8 +173,10 @@ public class ShelfService {
 
     /**
      * remove an order from shelf for delivery
+     * boolean return value decides if need to check other shelves after checking on overflow
      * @param order
-     * @return
+     * @return false if the order is not found on shelf; true when the order is found even it's not delivered
+     * because life reaches 0 (since delivery starts at overflow, if it's found on overflow, no need to check other shelves)
      */
     public boolean removeForDelivery(Order order, Shelf shelf) {
         shelf.getLock().lock();
@@ -187,8 +187,7 @@ public class ShelfService {
         if (node == null) {
             logger.log(Level.DEBUG, "NOT FOUND - {} is not found on shelf {}", order.getId(), shelf.getName());
         }
-//        if (node == null) throw new DataIntegrityViolation("not correct");
-//        System.out.println(" node not found on " + shelf.getName() + " shelf");
+
         try {
             masterLock.lock();
             if (node != null) {
@@ -196,16 +195,13 @@ public class ShelfService {
                 validateStateMaintained(shelf);
                 double lifeValue = computeLifeValue(order, shelf);
                 removeOrderHelper(order.getId(), shelf);
+                validateStateMaintained(shelf);
+                //if lifeValue reached 0 at delivery time
                 if(lifeValue <= 0) {
                     shelfMgmtSystem.readContents("REMOVAL - past due: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                     return true;
                 }
-                validateStateMaintained(shelf);
-//                if(pastDueTime) {
-//                    ShelfMgmtSystem.readContents(LocalTime.now().withNano(0),"REMOVAL - cleaned: order " + order.getId() + " from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
-//                } else {
                 shelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
-//                }
                 return true;
             }
             return false;
@@ -256,6 +252,12 @@ public class ShelfService {
         masterLock.unlock();
     }
 
+    /**
+     * compute remaining life value
+     * @param order
+     * @param shelf
+     * @return
+     */
     private double computeLifeValue(Order order, Shelf shelf) {
         double lifeValue;
         if (isOverflowShelf(shelf)) {
@@ -266,6 +268,11 @@ public class ShelfService {
         return lifeValue;
     }
 
+    /**
+     * check if an overflow shelf
+     * @param shelf
+     * @return
+     */
     private boolean isOverflowShelf(Shelf shelf) {
         return !(Temperature.HOT.name().equals(shelf.getName())
                 || Temperature.COLD.name().equals(shelf.getName())
@@ -307,6 +314,7 @@ public class ShelfService {
      * @param id
      */
     private void removeOrderHelper(UUID id, Shelf shelf) {
+        if(shelf.getLocations().get(id) == null) return;
         shelf.getLock().lock();
         DoublyLinkedNode node = shelf.getLocations().remove(id);
         if (node == null) throw new DataIntegrityViolation("Error: can not remove order not on shelf - order " + id);
@@ -320,26 +328,26 @@ public class ShelfService {
         switch (o.getTemp()) {
             case HOT:
                 temp = extractNode(node, shelf.getHotHead(), shelf.getHotTail(), shelf);
-//                shelf.getHotHead() = temp[0];
-//                hotTail = temp[1];
                 shelf.setHotHeadTail(temp[0], temp[1]);
                 break;
             case COLD:
                 temp = extractNode(node, shelf.getColdHead(), shelf.getColdTail(), shelf);
-//                coldHead = temp[0];
-//                coldTail = temp[1];
                 shelf.setColdHeadTail(temp[0], temp[1]);
                 break;
             case FROZEN:
                 temp = extractNode(node, shelf.getFrozenHead(), shelf.getFrozenTail(), shelf);
-//                frozenHead = temp[0];
-//                frozenTail = temp[1];
                 shelf.setFrozenHeadTail(temp[0], temp[1]);
         }
         shelf.getLock().unlock();
     }
 
-    private /*DoublyLinkedNode[]*/ void putOrderOnShelfHelper(Order o, DoublyLinkedNode curr, Shelf shelf) {
+    /**
+     * put order o on shelf with position at curr.value(), update head and tail to maintain state
+     * @param o
+     * @param curr
+     * @param shelf
+     */
+    private void putOrderOnShelfHelper(Order o, DoublyLinkedNode curr, Shelf shelf) {
         shelf.getLock().lock();
         DoublyLinkedNode h = null;
         DoublyLinkedNode t = null;
@@ -357,7 +365,6 @@ public class ShelfService {
                 t = shelf.getFrozenTail();
         }
 
-//        DoublyLinkedNode[] temp = new DoublyLinkedNode[] {h, t};
         try {
             if (t == null) {
                 h = curr;
@@ -369,23 +376,16 @@ public class ShelfService {
             }
             switch (o.getTemp()) {
                 case HOT:
-//                    hotHead = h;
-//                    hotTail = t;
                     shelf.setHotHeadTail(h, t);
                     break;
                 case COLD:
-//                    coldHead = h;
-//                    coldTail = t;
                     shelf.setColdHeadTail(h, t);
                     break;
                 case FROZEN:
-//                    frozenHead = h;
-//                    frozenTail = t;
                     shelf.setFrozenHeadTail(h, t);
             }
             shelf.getLocations().put(o.getId(), curr);
             o.setPlacementTime();
-//            return temp;
         } finally {
             shelf.getLock().unlock();
         }
@@ -395,6 +395,7 @@ public class ShelfService {
     public Shelf getHotShelf() {
         return hotShelf;
     }
+
     public Shelf getColdShelf() {
         return coldShelf;
     }
@@ -402,9 +403,15 @@ public class ShelfService {
     public Shelf getFrozenShelf() {
         return frozenShelf;
     }
+
     public Shelf getOverflowShelf() {
         return overflowShelf;
     }
+
+    /**
+     * this verifies data is consistent on a shelf before and after an operation on the shelf
+     * @param shelf
+     */
     private void validateStateMaintained(Shelf shelf) {
         shelf.getLock().lock();
         try {
@@ -433,7 +440,7 @@ public class ShelfService {
                 Order o = shelf.getCells()[node.value()];
                 assert o != null && o.getTemp() == Temperature.HOT;
                 sum++;
-                node = node.next();  //also verify the middle node: next previous not null //maybe do a previous loop
+                node = node.next();
             }
             node = shelf.getColdHead();
             while (node != null) {
@@ -456,7 +463,7 @@ public class ShelfService {
                 Order o = shelf.getCells()[node.value()];
                 assert o != null && o.getTemp() == Temperature.HOT;
                 sum++;
-                node = node.previous();  //also verify the middle node: next previous not null //maybe do a previous loop
+                node = node.previous();
             }
             node = shelf.getColdTail();
             while (node != null) {

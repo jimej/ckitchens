@@ -13,7 +13,7 @@ import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 
 /**
- * deliver orders through this service
+ * deliver orders through this service {@link DeliveryService#run()}
  * launch threads equal to the number of courier
  */
 public class DeliveryService {
@@ -32,8 +32,8 @@ public class DeliveryService {
         while (!shutdownSignal) {
             Order o = dispatchService.getOrderForDelivery();
             if (o != null) {
-                //10, 30; 10, 40;
-                int delay = RandomInt.randomDelay(2, 6); //new Random().nextInt(10) + 10; //20, 60 // 4, 2
+                //10, 30; 10, 40; 60, 80
+                int delay = RandomInt.randomDelay(2, 6);
                 executor.schedule(
                         () -> {
                             logger.log(Level.DEBUG, DeliveryService.class.getSimpleName() + "to remove order {} from shelf", o.getId());

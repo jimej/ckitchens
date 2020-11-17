@@ -55,7 +55,7 @@ public class ShelfMgmtSystem {
     }
 
     /**
-     * entry point for placing order on shelves
+     * entry point for placing order on shelves (which can start the order movement between shelves)
      * @param order
      */
     public void placeOrderOnShelf(Order order) {
@@ -78,34 +78,6 @@ public class ShelfMgmtSystem {
     }
 
     /**
-     * readContents on all shelves
-     * masterLock is used to lock all shelves before reading.
-     * @param className
-     * @param triggerEvent
-     */
-    public void readContents(String triggerEvent, String className) {
-        masterLock.lock();
-        System.out.println(LocalTime.now()  + " | " + triggerEvent + " [" + className +"] ");
-        System.out.println("=============================");
-        shelfService.readContentOnShelf(overflowShelf);
-        shelfService.readContentOnShelf(hotShelf);
-        shelfService.readContentOnShelf(coldShelf);
-        shelfService.readContentOnShelf(frozenShelf);
-        masterLock.unlock();
-    }
-
-    /**
-     * clean up orders that reached end of life
-     * called periodically by {@link CleanupService} to discard orders
-     */
-    public void cleanupOrdersEndOfLife() {
-        shelfService.cleanup(overflowShelf);
-        shelfService.cleanup(hotShelf);
-        shelfService.cleanup(coldShelf);
-        shelfService.cleanup(frozenShelf);
-    }
-
-    /**
      * entry point for delivering an order
      * called by {@link DeliveryService} to deliver an order
      * first check if the order is on overflow, then check on a regular shelf
@@ -124,6 +96,47 @@ public class ShelfMgmtSystem {
                     shelfService.removeForDelivery(order, frozenShelf);
             }
         }
+    }
+
+    /**
+     * clean up orders that reached end of life
+     * called periodically by {@link CleanupService} to discard orders
+     */
+    public void cleanupOrdersEndOfLife() {
+        shelfService.cleanup(overflowShelf);
+        shelfService.cleanup(hotShelf);
+        shelfService.cleanup(coldShelf);
+        shelfService.cleanup(frozenShelf);
+    }
+
+    /**
+     * readContents on all shelves
+     * masterLock is used to lock all shelves before reading.
+     * @param className
+     * @param triggerEvent
+     */
+    public void readContents(String triggerEvent, String className) {
+        masterLock.lock();
+        System.out.println(LocalTime.now()  + " | " + triggerEvent + " [" + className +"] ");
+        System.out.println("=============================");
+        shelfService.readContentOnShelf(overflowShelf);
+        shelfService.readContentOnShelf(hotShelf);
+        shelfService.readContentOnShelf(coldShelf);
+        shelfService.readContentOnShelf(frozenShelf);
+        masterLock.unlock();
+    }
+
+    /**
+     * place an order on overflow when a HOT/COLD/FROZEN shelf is full
+     * @param order
+     */
+    private void placeOrderOnOverflow(Order order) {
+        overflow.lock();
+        if (!shelfService.placeOnShelf(order, overflowShelf)) {
+            logger.log(Level.DEBUG, ShelfMgmtSystem.class.getSimpleName() + " not able to directly place {} on overflow", order.getId());
+            moveOrderFromOverflow(order);
+        }
+        overflow.unlock();
     }
 
     /**
@@ -171,8 +184,10 @@ public class ShelfMgmtSystem {
             overflow.unlock();
         }
 
+        //when an order on overflow can't be moved to another shelf, a random order is discarded
+        //at this point the overflow shelf is full
         overflow.lock();
-        Order discarded = shelfService.discardRandom(overflowShelf); //overflow shelf must be full at this point.
+        Order discarded = shelfService.discardRandom(overflowShelf);
         if(discarded != null) {
             shelfService.placeOnShelf(order, overflowShelf);
             logger.log(Level.DEBUG,ShelfMgmtSystem.class.getSimpleName() + " order {} is placed on overflow shelf after discarding an order on overflow", order.getId());
@@ -183,30 +198,15 @@ public class ShelfMgmtSystem {
     }
 
     /**
-     * place an order on overflow when a HOT/COLD/FROZEN shelf is full
+     * this is called when a move from overflow to HOT/COLD/FROZEN shelf is possible
      * @param order
+     * @param temp
+     * @param shelf
      */
-    private void placeOrderOnOverflow(Order order) {
-        overflow.lock();
-        if (!shelfService.placeOnShelf(order, overflowShelf)) {
-            logger.log(Level.DEBUG, ShelfMgmtSystem.class.getSimpleName() + " not able to directly place {} on overflow", order.getId());
-            moveOrderFromOverflow(order);
-        }
-        overflow.unlock();
-    }
-
     private void vacateFromOverflow(Order order, Temperature temp, Shelf shelf) {
-//        if (SHELF_O.hasOnShelf(temp) && shelf.isCellAvailable()) {
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " about to move an order from overflow to frozen shelf to place " + order.getId() + " on overflow shelf");
             Order o = shelfService.removeBasedOnTemperature(temp, overflowShelf);
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " removed an order " + o.getId() + " temp " + o.getTemp() + " from overflow shelf to place " + order.getId());
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order before moving from overflow " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and default max lifeAfterMove " + o.getLifeAfterMove());
             o.setLifeAfterMove();
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " " + o.isMoved() + " with original life " + o.getShelfLife() + " and shorter life " + o.getLifeAfterMove());
             shelfService.placeOnShelf(o, shelf);
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + o.getId() + " is placed on frozen shelf and yielded overflow shelf position to order " + order.getId());
             shelfService.placeOnShelf(order, overflowShelf);
-//                System.out.println(ShelfMgmtSystem.class.getSimpleName() + " order " + order.getId() + " is placed on overflow shelf after moving to frozen position on overflow by order " + o.getId());
-//        }
     }
 }

@@ -11,8 +11,8 @@ import java.util.concurrent.Executors;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 /**
- * get orders from {@link LockedQueue}, cook orders and place cooked orders on shelf
- * launch threads equal to the number of chefs to perform the actions
+ * get orders from {@link OrderDispatchService} orders queue through {@link ChefMgmtService#run()}
+ * cook orders and place cooked orders on shelf
  */
 public class ChefMgmtService {
     private final OrderDispatchService orderDispatchService ;

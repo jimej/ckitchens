@@ -10,7 +10,12 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.*;
 
 /**
- * publish order to delivery system; get order for delivery
+ * perform these actions:
+ * <ul>
+ *     <li>get order from orders queue</li>
+ *     <li>publish order to delivery queue</li>
+ *     <li>get order for delivery from delivery queue</li>
+ * </ul>
  */
 public class OrderDispatchService {
     private final LinkedBlockingQueue<Order> deliveryQueue;
@@ -25,12 +30,21 @@ public class OrderDispatchService {
         executor = Executors.newFixedThreadPool(2);
     }
 
+    /**
+     * called by {@link ChefMgmtService} to cook and place the order on shelf
+     * publish the order to {@link OrderDispatchService#deliveryQueue}
+     * @return order from {@link OrderDispatchService#orders} queue
+     */
     public Order getIncomingOrder() {
         Order order = getOrderFromQueue(orders);
         if(order != null) moveOrderToDeliveryQueue(order);
         return order;
     }
 
+    /**
+     * add an order to the delivery queue
+     * @param order
+     */
     public void moveOrderToDeliveryQueue(Order order) {
         executor.execute(() ->
                 {
@@ -41,6 +55,10 @@ public class OrderDispatchService {
 
     }
 
+    /**
+     * called by {@link DeliveryService}
+     * @return
+     */
     public Order getOrderForDelivery() {
         return getOrderFromQueue(deliveryQueue);
     }
@@ -63,6 +81,7 @@ public class OrderDispatchService {
     }
 
     public void signalShutDown() {
-        this.shutdownSignal = true; this.executor.shutdownNow();
+        this.shutdownSignal = true;
+        this.executor.shutdownNow();
     }
 }

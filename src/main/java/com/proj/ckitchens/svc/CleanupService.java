@@ -7,7 +7,7 @@ import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 
 /**
- * clean up orders from shelves when food value reaches 0 or becomes negative
+ * periodically clean up orders from shelves when food value reaches 0 or becomes negative
  */
 public class CleanupService {
     private final ScheduledExecutorService executor;
