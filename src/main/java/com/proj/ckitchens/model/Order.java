@@ -42,10 +42,6 @@ public class Order {
         return id;
     }
 
-//    public long getShelfLife() {
-//        return shelfLife;
-//    }
-
     public Temperature getTemp() {
         return temp;
     }
@@ -72,10 +68,6 @@ public class Order {
         }
         return Long.MAX_VALUE;
     }
-
-//    public long getLifeAfterMove() {
-//        return this.lifeAfterMove;
-//    }
 
     public boolean isMoved() {
         return isMoved;
