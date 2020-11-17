@@ -19,53 +19,48 @@ import java.util.concurrent.locks.ReentrantLock;
  * This class is the entry point for placing orders on shelves, delivering/discarding orders,
  * moving orders between shelves, cleaning up orders
  */
-@Service
-public class ShelfMgmtSystem implements InitializingBean {
-    private final Lock hot;// = new ReentrantLock(true);
-    private final Lock cold;// = new ReentrantLock(true);
-    private  final Lock frozen;// = new ReentrantLock(true);
-    private  final Lock overflow;// = new ReentrantLock(true);
-//    private static final ShelfService shelfServiceInstance = new ShelfService(
-//            new Shelf(hot, 10, Temperature.HOT.name()),
-//            new Shelf(cold, 10, Temperature.COLD.name()),
-//            new Shelf(frozen, 10, Temperature.FROZEN.name()),
-//            new Shelf(overflow, 15, "Overflow")
-//    );
-    private final Shelf hotShelf; // = new Shelf(hot, 10, Temperature.HOT.name());
-    private final Shelf coldShelf; // = new Shelf(cold, 10, Temperature.COLD.name());
-    private final Shelf frozenShelf; // = new Shelf(frozen, 10, Temperature.FROZEN.name());
-    private final Shelf overflowShelf; // = new Shelf(overflow, 20, "Overflow");
-    private final ShelfService shelfService; // =  new ShelfService(hotShelf, coldShelf, frozenShelf, overflowShelf);
+//@Service
+public class ShelfMgmtSystem implements InitializingBean{
+    private static final Lock hot = new ReentrantLock(true);
+    private static final Lock cold = new ReentrantLock(true);
+    private static final Lock frozen = new ReentrantLock(true);
+    private static final Lock overflow = new ReentrantLock(true);
+    private static final ShelfService shelfServiceInstance = new ShelfService(
+            new Shelf(hot, 10, Temperature.HOT.name()),
+            new Shelf(cold, 10, Temperature.COLD.name()),
+            new Shelf(frozen, 10, Temperature.FROZEN.name()),
+            new Shelf(overflow, 15, "Overflow")
+    );
+    private final Shelf hotShelf;
+    private final Shelf coldShelf;
+    private final Shelf frozenShelf;
+    private final Shelf overflowShelf;
+    private final ShelfService shelfService;
     public static  Lock masterLock = new ReentrantLock(true);
     private static final Logger logger = LogManager.getLogger(ShelfMgmtSystem.class);
 
-    private static ShelfMgmtSystem instance;
+//    public static ShelfMgmtSystem shelfMgmtSystem = ShelfMgmtSystem.get();
 
-    //    private static final ShelfService SHELF_H = new ShelfService();
-//    private static final ShelfService SHELF_C = new ShelfService();
-//    private static final ShelfService SHELF_F = new ShelfService();
-//    private static final ShelfService SHELF_O = new ShelfService();
-//    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem(shelfServiceInstance);
+    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem(shelfServiceInstance);
     public ShelfMgmtSystem(ShelfService shelfService) {
         this.shelfService = shelfService;
         hotShelf = shelfService.getHotShelf();
         coldShelf = shelfService.getColdShelf();
         frozenShelf = shelfService.getFrozenShelf();
         overflowShelf = shelfService.getOverflowShelf();
-        hot = hotShelf.getLock();
-        cold = coldShelf.getLock();
-        frozen = frozenShelf.getLock();
-        overflow = overflowShelf.getLock();
-
+//        hot = hotShelf.getLock();
+//        cold = coldShelf.getLock();
+//        frozen = frozenShelf.getLock();
+//        overflow = overflowShelf.getLock();
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        instance = this;
+        shelfMgmtSystem = this;
     }
 
     public static ShelfMgmtSystem get() {
-        return instance;
+        return shelfMgmtSystem;
     }
 
 

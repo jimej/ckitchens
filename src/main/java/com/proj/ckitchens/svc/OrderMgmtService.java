@@ -1,14 +1,12 @@
 package com.proj.ckitchens.svc;
 
 import com.proj.ckitchens.model.Order;
-import com.proj.ckitchens.common.LockedQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**

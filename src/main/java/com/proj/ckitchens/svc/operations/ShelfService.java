@@ -4,7 +4,6 @@ import com.proj.ckitchens.common.DoublyLinkedNode;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
-import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -17,12 +16,12 @@ import java.util.Random;
 import java.util.UUID;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
-//import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 /**
  * service on a single shelf
  */
-@Service
+//@Service
 public class ShelfService {
     private final Shelf hotShelf;
     private final Shelf coldShelf;
@@ -58,9 +57,9 @@ public class ShelfService {
 
                 if(!order.isMoved()) {
                     order.setPlacementTime();
-                    ShelfMgmtSystem.get().readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
+                    shelfMgmtSystem.readContents("INITIAL placement: order " + order.getId() + " placed at " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
                 } else {
-                    ShelfMgmtSystem.get().readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
+                    shelfMgmtSystem.readContents("MOVE placement: order " + order.getId() + " moved to " + freePos + " on " + shelf.getName() + " shelf", shelf.getClass().getSimpleName());
                 }
                 return true;
             }
@@ -137,7 +136,7 @@ public class ShelfService {
             validateStateMaintained(shelf);
             removeOrderHelper(id, shelf);
             validateStateMaintained(shelf);
-            ShelfMgmtSystem.get().readContents("MOVED - random order " + o.getId() + " moved from " + shelf.getName() + " shelf at position " + pos+ " to " + o.getTemp() + " shelf", shelf.getClass().getSimpleName());
+            shelfMgmtSystem.readContents("MOVED - random order " + o.getId() + " moved from " + shelf.getName() + " shelf at position " + pos+ " to " + o.getTemp() + " shelf", shelf.getClass().getSimpleName());
 
             return o;
         } finally {
@@ -166,7 +165,7 @@ public class ShelfService {
             validateStateMaintained(shelf);
             removeOrderHelper(o.getId(), shelf);
             validateStateMaintained(shelf);
-            ShelfMgmtSystem.get().readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from " + shelf.getName() + " shelf; temp: " + o.getTemp(), shelf.getClass().getSimpleName());
+            shelfMgmtSystem.readContents("REMOVAL - discarded: random order from position " + pos + " - " + o.getId() + " discarded from " + shelf.getName() + " shelf; temp: " + o.getTemp(), shelf.getClass().getSimpleName());
             return o;
         } finally {
             masterLock.unlock();
@@ -201,10 +200,10 @@ public class ShelfService {
                 validateStateMaintained(shelf);
                 //if lifeValue reached 0 at delivery time
                 if(lifeValue <= 0) {
-                    ShelfMgmtSystem.get().readContents("REMOVAL - past due: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                    shelfMgmtSystem.readContents("REMOVAL - past due: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                     return true;
                 }
-                ShelfMgmtSystem.get().readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                shelfMgmtSystem.readContents("REMOVAL - delivered: order " + order.getId() + " from " + shelf.getName() + " shelf at position " + pos + "; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                 return true;
             }
             return false;
@@ -228,7 +227,7 @@ public class ShelfService {
                     validateStateMaintained(shelf);
                     masterLock.lock();
                     removeOrderHelper(order.getId(), shelf);
-                    ShelfMgmtSystem.get().readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
+                    shelfMgmtSystem.readContents("REMOVAL - cleaned: order " + order.getId() + " cleaned from " + shelf.getName() + " shelf; temp: " + order.getTemp(), shelf.getClass().getSimpleName());
                     validateStateMaintained(shelf);
                     masterLock.unlock();
                 }

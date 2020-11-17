@@ -4,6 +4,7 @@ import com.proj.ckitchens.common.DoublyLinkedNode;
 import com.proj.ckitchens.common.Temperature;
 import com.proj.ckitchens.model.Order;
 import com.proj.ckitchens.model.Shelf;
+import com.proj.ckitchens.svc.ShelfMgmtSystem;
 import com.proj.ckitchens.utils.DataIntegrityViolation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -39,7 +41,8 @@ public class ShelfServiceTest {
         doNothing().when(lock).lock();
         doNothing().when(lock).unlock();
         doNothing().when(overflowLock).unlock();
-        doNothing().when(overflowLock).unlock();
+        shelfMgmtSystem = mock(ShelfMgmtSystem.class);
+        doNothing().when(shelfMgmtSystem).readContents(anyString(), anyString());
     }
 
     @BeforeEach
@@ -47,7 +50,6 @@ public class ShelfServiceTest {
         hshelf = new Shelf(lock, 3, Temperature.HOT.name());
         cshelf = mock(Shelf.class);
         fshelf = mock(Shelf.class);
-        overflowShelf = mock(Shelf.class);
         overflowShelf = new Shelf(lock, 3, "Overflow");
         service = new ShelfService(hshelf, cshelf, fshelf, overflowShelf);
     }

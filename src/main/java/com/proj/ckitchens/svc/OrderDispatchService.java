@@ -1,7 +1,5 @@
 package com.proj.ckitchens.svc;
 
-//import com.proj.ckitchens.common.OrderDispatchQueue;
-import com.proj.ckitchens.common.LockedQueue;
 import com.proj.ckitchens.model.Order;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

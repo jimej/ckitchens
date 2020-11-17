@@ -1,14 +1,13 @@
 package com.proj.ckitchens.svc;
 
 import com.proj.ckitchens.model.Order;
-import com.proj.ckitchens.common.LockedQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-//import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
+import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 /**
  * get orders from {@link OrderDispatchService} orders queue through {@link ChefMgmtService#run()}
@@ -33,7 +32,7 @@ public class ChefMgmtService {
                 executor.execute(() -> {
                     cookOrder(o);
                     logger.log(Level.DEBUG, ChefMgmtService.class.getSimpleName() + " {} order cooked and to be placed on shelf: ", o.getId());
-                    ShelfMgmtSystem.get().placeOrderOnShelf(o);
+                    shelfMgmtSystem.placeOrderOnShelf(o);
 
                 });
 
