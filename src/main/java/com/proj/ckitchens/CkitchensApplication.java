@@ -6,6 +6,8 @@ import com.proj.ckitchens.svc.*;
 import com.proj.ckitchens.utils.OrderParser;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -15,35 +17,35 @@ public class CkitchensApplication {
 
 	public static void main(String[] args) {
 		System.out.println("- Application started -");
-		SpringApplication.run(CkitchensApplication.class, args);
+		ApplicationContext applicationContext = SpringApplication.run(CkitchensApplication.class, args);
 
 		List<Order> orders = OrderParser.readFromFile("orders.json");
 
-		LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
-		LinkedBlockingQueue<Order> deliveryQueue = new LinkedBlockingQueue<>();
-		OrderDispatchService dispatchService = new OrderDispatchService(orderQueue, deliveryQueue);
-		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue);
-		ChefMgmtService chefMgmtService = new ChefMgmtService(3, dispatchService);
-		DeliveryService deliveryService = new DeliveryService(3, dispatchService);
-        CleanupService cleanupService = new CleanupService();
-//		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/org/apache/logging/log4j/Logger.class"));
-//		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/org/apache/logging/log4j/core/Appender.class"));
-//		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/log4j2.xml"));
-
-		Order ord_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 100, 0.23);
-		Order ord_2 = new Order(UUID.randomUUID(), Temperature.COLD, "Italian", 50, 0.23);
-		Order ord_3 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 100, 0.23);
-		Order ord_4 = new Order(UUID.randomUUID(), Temperature.COLD, "Ice Cream", 70, 0.23);
-		Order ord_5 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 10, 0.23);
-		Order ord_6 = new Order(UUID.randomUUID(), Temperature.COLD, "Pizza", 30, 0.23);
-		Order ord_7 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 100, 0.23);
-
-		Thread r = new Thread(() -> chefMgmtService.run());
-		r.start();
-		Thread t = new Thread(() -> deliveryService.run());
-		t.start();
-		Thread c = new Thread(() -> cleanupService.run());
-		c.start();
+//		LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
+//		LinkedBlockingQueue<Order> deliveryQueue = new LinkedBlockingQueue<>();
+//		OrderDispatchService dispatchService = new OrderDispatchService(orderQueue, deliveryQueue);
+//		OrderMgmtService orderMgmtService = new OrderMgmtService(orderQueue);
+//		ChefMgmtService chefMgmtService = new ChefMgmtService(3, dispatchService);
+//		DeliveryService deliveryService = new DeliveryService(3, dispatchService);
+//        CleanupService cleanupService = new CleanupService();
+////		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/org/apache/logging/log4j/Logger.class"));
+////		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/org/apache/logging/log4j/core/Appender.class"));
+////		System.out.println(org.apache.logging.log4j.Logger.class.getResource("/log4j2.xml"));
+//
+//		Order ord_1 = new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", 100, 0.23);
+//		Order ord_2 = new Order(UUID.randomUUID(), Temperature.COLD, "Italian", 50, 0.23);
+//		Order ord_3 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 100, 0.23);
+//		Order ord_4 = new Order(UUID.randomUUID(), Temperature.COLD, "Ice Cream", 70, 0.23);
+//		Order ord_5 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 10, 0.23);
+//		Order ord_6 = new Order(UUID.randomUUID(), Temperature.COLD, "Pizza", 30, 0.23);
+//		Order ord_7 = new Order(UUID.randomUUID(), Temperature.FROZEN, "Pizza", 100, 0.23);
+//
+//		Thread r = new Thread(() -> chefMgmtService.run());
+//		r.start();
+//		Thread t = new Thread(() -> deliveryService.run());
+//		t.start();
+//		Thread c = new Thread(() -> cleanupService.run());
+//		c.start();
 
 //		orderMgmtService.addOrder(ord_1);
 //		orderMgmtService.addOrder(ord_2);
@@ -56,11 +58,46 @@ public class CkitchensApplication {
 		double ordersPerSecond = 20; //
 		int gap = (int) Math.round(1000/ordersPerSecond); //poisson distribution
 
+//		orders.stream().forEach(o ->
+//				{
+//					try {
+//						Thread.sleep(gap);
+//						orderMgmtService.addOrder(o);
+//					} catch (Exception e) {
+//
+//					}
+//				}
+//		);
+//
+//		try {
+//			Thread.sleep(60000);//200000
+//		} catch(Exception e) {}
+//
+////		try {
+////			r.join();
+////			t.join();
+////			c.join();
+////		} catch (Exception e) {
+////
+////		}
+//		cleanupService.signalShutdown();
+//		chefMgmtService.signalShutdown();
+//		deliveryService.signalShutdown();
+//		orderMgmtService.shutdown();
+//		dispatchService.signalShutDown();
+
+		Thread c = new Thread(() -> applicationContext.getBean(ChefMgmtService.class).run());
+		Thread d = new Thread(() -> applicationContext.getBean(DeliveryService.class).run());
+		Thread cu = new Thread(() -> applicationContext.getBean(CleanupService.class).run());
+		c.start();
+		d.start();
+		cu.start();
+
 		orders.stream().forEach(o ->
 				{
 					try {
 						Thread.sleep(gap);
-						orderMgmtService.addOrder(o);
+						applicationContext.getBean(OrderMgmtService.class).addOrder(o);
 					} catch (Exception e) {
 
 					}
@@ -70,19 +107,17 @@ public class CkitchensApplication {
 		try {
 			Thread.sleep(60000);//200000
 		} catch(Exception e) {}
-
 //		try {
-//			r.join();
-//			t.join();
 //			c.join();
-//		} catch (Exception e) {
-//
-//		}
-		cleanupService.signalShutdown();
-		chefMgmtService.signalShutdown();
-		deliveryService.signalShutdown();
-		orderMgmtService.shutdown();
-		dispatchService.signalShutDown();
+//			d.join();
+//		}catch(InterruptedException e) {}
+
+		applicationContext.getBean(CleanupService.class).signalShutdown();
+		applicationContext.getBean(ChefMgmtService.class).signalShutdown();
+		applicationContext.getBean(DeliveryService.class).signalShutdown();
+		applicationContext.getBean(OrderMgmtService.class).shutdown();
+		applicationContext.getBean(OrderDispatchService.class).signalShutDown();
+
 
 	}
 
