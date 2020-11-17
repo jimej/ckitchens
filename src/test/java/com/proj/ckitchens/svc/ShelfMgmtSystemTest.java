@@ -8,9 +8,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
+import static com.proj.ckitchens.svc.TestFixture.*;
 
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
@@ -49,9 +48,10 @@ public class ShelfMgmtSystemTest {
         shelfMgmtSystem = spy(new ShelfMgmtSystem(shelfService));
         doNothing().when(shelfMgmtSystem).readContents(anyString(), anyString());
     }
+
     @Test
     public void testPlaceOrderOnShelf() {
-        Order order1 = generateOneOrder();
+        Order order1 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order1);
         verify(shelfService, times(1)).placeOnShelf(order1, hotShelf);
         verify(shelfService, times(0)).placeOnShelf(order1, overflowShelf);
@@ -59,7 +59,7 @@ public class ShelfMgmtSystemTest {
         assertTrue(shelfService.getOverflowShelf().getLocations().size() == 0);
 
         //order will be placed on overflow
-        Order order2 = generateOneOrder();
+        Order order2 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order2);
         verify(shelfService, times(1)).placeOnShelf(order2, hotShelf);
         verify(shelfService, times(1)).placeOnShelf(order2, overflowShelf);
@@ -67,7 +67,7 @@ public class ShelfMgmtSystemTest {
         assertTrue(shelfService.getOverflowShelf().getLocations().size() == 1);
 
         //order on overflow will be discarded
-        Order order3 = generateOneOrder();
+        Order order3 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order3);
         verify(shelfService, times(1)).placeOnShelf(order3, hotShelf);
         verify(shelfService, times(2)).placeOnShelf(order3, overflowShelf);
@@ -85,8 +85,8 @@ public class ShelfMgmtSystemTest {
     @Test
     public void testDeliverOrder() {
         //deliver from hotShelf
-        Order order1 = generateOneOrder();
-        Order order2 = generateOneOrder();
+        Order order1 = generateOneHotOrder();
+        Order order2 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order1);
         shelfMgmtSystem.placeOrderOnShelf(order2);
 
@@ -105,13 +105,13 @@ public class ShelfMgmtSystemTest {
 
     @Test
     public void testMoverOrderFromOverflowToTemperatureShelf() {
-        Order order1 = generateOneOrder();
-        Order order2 = generateOneOrder();
+        Order order1 = generateOneHotOrder();
+        Order order2 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order1);//on hotShelf
         shelfMgmtSystem.placeOrderOnShelf(order2);//on overflow
 
         doReturn(true).when(shelfService).isCellAvailable(hotShelf);
-        Order order3 = generateOneOrder();
+        Order order3 = generateOneHotOrder();
         shelfMgmtSystem.placeOrderOnShelf(order3);
         verify(shelfMgmtSystem, times(1)).moveOrderFromOverflow(order3);
         verify(shelfService, times(1)).removeBasedOnTemperature(Temperature.HOT, overflowShelf);
@@ -128,10 +128,6 @@ public class ShelfMgmtSystemTest {
         verify(shelfService, times(1)).cleanup(hotShelf);
         verify(shelfService, times(1)).cleanup(shelfService.getColdShelf());
         verify(shelfService, times(1)).cleanup(shelfService.getFrozenShelf());
-    }
-
-    private Order generateOneOrder() {
-        return new Order(UUID.randomUUID(), Temperature.HOT, "Pizza", new Random().nextInt(300), Math.random());
     }
 }
 

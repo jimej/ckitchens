@@ -17,6 +17,7 @@ import static com.proj.ckitchens.svc.ShelfMgmtSystem.masterLock;
 import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static com.proj.ckitchens.svc.TestFixture.*;
 
 public class ShelfServiceTest {
     private final static ReentrantLock lock = mock(ReentrantLock.class);
@@ -345,12 +346,12 @@ public class ShelfServiceTest {
         }
     }
 
-    private Order generateOneHotOrder() {
-        return generateOneOrder(Temperature.HOT);
-    }
-
-    private Order generateOneOrder(Temperature t) {
-        return new Order(UUID.randomUUID(), t, "Pizza", new Random().nextInt(300), Math.random());
-    }
+//    private Order generateOneHotOrder() {
+//        return generateOneOrder(Temperature.HOT);
+//    }
+//
+//    private Order generateOneOrder(Temperature t) {
+//        return new Order(UUID.randomUUID(), t, "Pizza", new Random().nextInt(300), Math.random());
+//    }
 
 }
