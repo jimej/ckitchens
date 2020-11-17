@@ -7,6 +7,7 @@ import com.proj.ckitchens.svc.operations.ShelfService;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
@@ -19,17 +20,17 @@ import java.util.concurrent.locks.ReentrantLock;
  * moving orders between shelves, cleaning up orders
  */
 @Service
-public class ShelfMgmtSystem {
-    private static final Lock hot = new ReentrantLock(true);
-    private static final Lock cold = new ReentrantLock(true);
-    private static final Lock frozen = new ReentrantLock(true);
-    private static final Lock overflow = new ReentrantLock(true);
-    private static final ShelfService shelfServiceInstance = new ShelfService(
-            new Shelf(hot, 10, Temperature.HOT.name()),
-            new Shelf(cold, 10, Temperature.COLD.name()),
-            new Shelf(frozen, 10, Temperature.FROZEN.name()),
-            new Shelf(overflow, 15, "Overflow")
-    );
+public class ShelfMgmtSystem implements InitializingBean {
+    private final Lock hot;// = new ReentrantLock(true);
+    private final Lock cold;// = new ReentrantLock(true);
+    private  final Lock frozen;// = new ReentrantLock(true);
+    private  final Lock overflow;// = new ReentrantLock(true);
+//    private static final ShelfService shelfServiceInstance = new ShelfService(
+//            new Shelf(hot, 10, Temperature.HOT.name()),
+//            new Shelf(cold, 10, Temperature.COLD.name()),
+//            new Shelf(frozen, 10, Temperature.FROZEN.name()),
+//            new Shelf(overflow, 15, "Overflow")
+//    );
     private final Shelf hotShelf; // = new Shelf(hot, 10, Temperature.HOT.name());
     private final Shelf coldShelf; // = new Shelf(cold, 10, Temperature.COLD.name());
     private final Shelf frozenShelf; // = new Shelf(frozen, 10, Temperature.FROZEN.name());
@@ -38,20 +39,35 @@ public class ShelfMgmtSystem {
     public static  Lock masterLock = new ReentrantLock(true);
     private static final Logger logger = LogManager.getLogger(ShelfMgmtSystem.class);
 
+    private static ShelfMgmtSystem instance;
 
     //    private static final ShelfService SHELF_H = new ShelfService();
 //    private static final ShelfService SHELF_C = new ShelfService();
 //    private static final ShelfService SHELF_F = new ShelfService();
 //    private static final ShelfService SHELF_O = new ShelfService();
-    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem(shelfServiceInstance);
+//    public static ShelfMgmtSystem shelfMgmtSystem = new ShelfMgmtSystem(shelfServiceInstance);
     public ShelfMgmtSystem(ShelfService shelfService) {
         this.shelfService = shelfService;
         hotShelf = shelfService.getHotShelf();
         coldShelf = shelfService.getColdShelf();
         frozenShelf = shelfService.getFrozenShelf();
         overflowShelf = shelfService.getOverflowShelf();
+        hot = hotShelf.getLock();
+        cold = coldShelf.getLock();
+        frozen = frozenShelf.getLock();
+        overflow = overflowShelf.getLock();
 
     }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        instance = this;
+    }
+
+    public static ShelfMgmtSystem get() {
+        return instance;
+    }
+
 
     /**
      * entry point for placing order on shelves (which can start the order movement between shelves)

@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
+//import static com.proj.ckitchens.svc.ShelfMgmtSystem.shelfMgmtSystem;
 
 
 /**
@@ -37,7 +37,7 @@ public class DeliveryService {
                 executor.schedule(
                         () -> {
                             logger.log(Level.DEBUG, DeliveryService.class.getSimpleName() + "to remove order {} from shelf", o.getId());
-                            shelfMgmtSystem.deliverOrder(o);
+                            ShelfMgmtSystem.get().deliverOrder(o);
                         }, delay, TimeUnit.SECONDS
                 );
             }
